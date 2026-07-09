@@ -1,3 +1,4 @@
+#base de datos postgres para ApuestasUFC
 services:
   postgres:
     image: postgres:16-alpine
