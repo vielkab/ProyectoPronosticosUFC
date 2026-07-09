@@ -2,14 +2,11 @@ import { NavLink, Outlet } from 'react-router-dom'
 
 import { useAutenticacion } from '../hooks/useAutenticacion'
 
-const enlaces = [
+const enlacesPublicos = [
   { to: '/', etiqueta: 'Inicio' },
   { to: '/eventos', etiqueta: 'Carteleras' },
   { to: '/peleadores', etiqueta: 'Peleadores' },
   { to: '/predicciones', etiqueta: 'Pronósticos' },
-  { to: '/billetera', etiqueta: 'Billetera' },
-  { to: '/apuestas/historial', etiqueta: 'Historial' },
-  { to: '/admin', etiqueta: 'Admin' },
 ]
 
 function obtenerClasesEnlace(activo: boolean): string {
@@ -20,6 +17,7 @@ function obtenerClasesEnlace(activo: boolean): string {
 
 export function LayoutPrincipal() {
   const { autenticado, cerrarSesion, sesion } = useAutenticacion()
+  const esAdmin = sesion?.usuario.rol === 'administrador'
 
   return (
     <div className="min-h-screen">
@@ -29,7 +27,7 @@ export function LayoutPrincipal() {
             <div>
               <p className="text-sm uppercase tracking-[0.35em] text-red-300">PronoStats UFC</p>
               <h1 className="m-0 text-3xl font-black tracking-tight text-white">
-                Plataforma MVP para estadísticas, pronósticos y apuestas virtuales
+                Estadísticas, carteleras y apuestas virtuales de UFC
               </h1>
             </div>
 
@@ -53,7 +51,7 @@ export function LayoutPrincipal() {
                     Iniciar sesión
                   </NavLink>
                   <NavLink className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-100" to="/registro">
-                    Crear cuenta
+                    Registrarse
                   </NavLink>
                 </>
               )}
@@ -61,11 +59,26 @@ export function LayoutPrincipal() {
           </div>
 
           <nav className="flex flex-wrap gap-3">
-            {enlaces.map((enlace) => (
+            {enlacesPublicos.map((enlace) => (
               <NavLink key={enlace.to} className={({ isActive }) => obtenerClasesEnlace(isActive)} to={enlace.to}>
                 {enlace.etiqueta}
               </NavLink>
             ))}
+            {autenticado ? (
+              <>
+                <NavLink className={({ isActive }) => obtenerClasesEnlace(isActive)} to="/billetera">
+                  Billetera
+                </NavLink>
+                <NavLink className={({ isActive }) => obtenerClasesEnlace(isActive)} to="/apuestas/historial">
+                  Historial
+                </NavLink>
+              </>
+            ) : null}
+            {autenticado && esAdmin ? (
+              <NavLink className={({ isActive }) => obtenerClasesEnlace(isActive)} to="/admin">
+                Admin
+              </NavLink>
+            ) : null}
           </nav>
         </div>
       </header>
