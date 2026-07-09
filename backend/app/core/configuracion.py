@@ -22,6 +22,16 @@ class Ajustes(BaseSettings):
     jwt_secret: str = Field("cambia-este-jwt-secret", alias="JWT_SECRET")
     jwt_expire_minutes: int = Field(60, alias="JWT_EXPIRE_MINUTES")
     api_sports_key: str = Field("", alias="API_SPORTS_KEY")
+    mma_api_url: str = Field("https://v1.mma.api-sports.io", alias="MMA_API_URL")
+    mma_fights_endpoint: str = Field("/fights", alias="MMA_FIGHTS_ENDPOINT")
+    mma_events_endpoint: str = Field("/events", alias="MMA_EVENTS_ENDPOINT")
+    mma_fighters_endpoint: str = Field("/fighters", alias="MMA_FIGHTERS_ENDPOINT")
+    mma_fighter_categories: str = Field(
+        "Flyweight,Bantamweight,Featherweight,Lightweight,Welterweight,Middleweight,Light Heavyweight,Heavyweight,"
+        "Women's Strawweight,Women's Flyweight,Women's Bantamweight,Women's Featherweight",
+        alias="MMA_FIGHTER_CATEGORIES",
+    )
+    mma_fighter_category_limit: int = Field(2, alias="MMA_FIGHTER_CATEGORY_LIMIT")
     stripe_secret_key: str = Field("", alias="STRIPE_SECRET_KEY")
     stripe_webhook_secret: str = Field("", alias="STRIPE_WEBHOOK_SECRET")
     stripe_public_key: str = Field("", alias="STRIPE_PUBLIC_KEY")
