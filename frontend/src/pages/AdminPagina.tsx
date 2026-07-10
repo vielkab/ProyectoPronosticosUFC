@@ -1,29 +1,34 @@
 import { useEffect, useState } from 'react'
 
 import { TarjetaResumen } from '../components/ui/TarjetaResumen'
-import { obtenerResumenAdmin, sincronizarDatosAdmin, type ResumenAdmin } from '../services/mvp'
+import { useAutenticacion } from '../hooks/useAutenticacion'
+import { obtenerResumenAdmin, sincronizarDatosAdmin, type ResumenAdmin } from '../services/admin'
 import { formatearMoneda } from '../utils/formatos'
 
 export function AdminPagina() {
+  const { sesion } = useAutenticacion()
+  const token = sesion!.accessToken
   const [resumen, setResumen] = useState<ResumenAdmin | null>(null)
   const [mensaje, setMensaje] = useState('')
   const [error, setError] = useState('')
   const [sincronizando, setSincronizando] = useState(false)
 
   useEffect(() => {
-    obtenerResumenAdmin()
+    obtenerResumenAdmin(token)
       .then(setResumen)
-      .catch(() => setError('No se pudo cargar el resumen administrativo.'))
-  }, [])
+      .catch(() => setError('No se pudo cargar el resumen.'))
+  }, [token])
 
   async function sincronizar() {
     try {
       setSincronizando(true)
       setError('')
-      const resultado = await sincronizarDatosAdmin()
-      const resumenActualizado = await obtenerResumenAdmin()
+      const resultado = await sincronizarDatosAdmin(token)
+      const resumenActualizado = await obtenerResumenAdmin(token)
       setResumen(resumenActualizado)
-      setMensaje(`Sincronización completada desde ${resultado.fuente}: ${resultado.eventos} eventos, ${resultado.peleas} peleas y ${resultado.peleadores} peleadores.`)
+      setMensaje(
+        `Sincronización desde ${resultado.fuente}: ${resultado.eventos} eventos, ${resultado.peleas} peleas, ${resultado.peleadores} peleadores.`,
+      )
     } catch {
       setError('No se pudo sincronizar la información externa.')
     } finally {
@@ -34,8 +39,8 @@ export function AdminPagina() {
   return (
     <div className="flex w-full flex-col gap-6">
       <header>
-        <h2 className="m-0 text-3xl font-black text-white">Dashboard administrador</h2>
-        <p className="mt-3 max-w-2xl text-slate-300">Métricas operativas del MVP y sincronización de información MMA.</p>
+        <h2 className="m-0 text-3xl font-black text-white">Resumen operativo</h2>
+        <p className="mt-2 text-slate-400">Métricas del MVP y sincronización de datos MMA.</p>
       </header>
 
       <div className="flex flex-wrap gap-3">

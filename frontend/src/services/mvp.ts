@@ -187,24 +187,3 @@ export async function crearCheckout(token: string, apuestaId: number): Promise<{
   )
   return data
 }
-
-export async function obtenerResumenAdmin(token: string): Promise<ResumenAdmin> {
-  const { data } = await api.get<ResumenAdmin>('/admin/resumen', {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return data
-}
-
-export async function sincronizarDatosAdmin(token: string): Promise<SincronizacionRespuesta> {
-  const { data } = await api.post<SincronizacionRespuesta>('/admin/sincronizar', undefined, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return data
-}
-
-export async function crearPeleaCartelera(token: string, payload: CrearPeleaCarteleraPayload): Promise<PeleaCarteleraResumen> {
-  const { data } = await api.post<PeleaCarteleraResumen>('/admin/cartelera/peleas', payload, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-  return data
-}

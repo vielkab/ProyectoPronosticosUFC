@@ -40,7 +40,11 @@ export function IniciarSesionPagina() {
         refreshToken: respuesta.refresh_token,
         usuario: respuesta.usuario,
       })
-      navigate('/perfil')
+      if (respuesta.usuario.rol === 'administrador') {
+        navigate('/admin')
+      } else {
+        navigate('/')
+      }
     },
   })
 
