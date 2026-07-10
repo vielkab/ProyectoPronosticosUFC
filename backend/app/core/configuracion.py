@@ -26,6 +26,10 @@ class Ajustes(BaseSettings):
     stripe_webhook_secret: str = Field("", alias="STRIPE_WEBHOOK_SECRET")
     stripe_public_key: str = Field("", alias="STRIPE_PUBLIC_KEY")
     frontend_url: str = Field("http://localhost:5173", alias="FRONTEND_URL")
+    frontend_urls: str = Field(
+        "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174",
+        alias="FRONTEND_URLS",
+    )
     sqlite_fallback_habilitado: bool = Field(True, alias="SQLITE_FALLBACK_HABILITADO")
     sqlite_fallback_url: str = Field("", alias="SQLITE_FALLBACK_URL")
     smtp_host: str = Field("", alias="SMTP_HOST")
@@ -38,6 +42,15 @@ class Ajustes(BaseSettings):
     admin_usuario: str = Field("Dana White", alias="ADMIN_USUARIO")
     admin_correo: str = Field("vielkaborja@gmail.com", alias="ADMIN_CORREO")
     admin_password: str = Field("Elmeromero1", alias="ADMIN_PASSWORD")
+
+    @property
+    def frontend_origenes_permitidos(self) -> list[str]:
+        origenes = [origen.strip() for origen in self.frontend_urls.split(",") if origen.strip()]
+
+        if self.frontend_url.strip():
+            origenes.append(self.frontend_url.strip())
+
+        return list(dict.fromkeys(origenes))
 
 
 ajustes = Ajustes()
