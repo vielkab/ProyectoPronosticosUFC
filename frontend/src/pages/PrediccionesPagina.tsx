@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import { TarjetaResumen } from '../components/ui/TarjetaResumen'
 import { useAutenticacion } from '../hooks/useAutenticacion'
 import {
-  crearCheckout,
   listarEventos,
   listarPeleadores,
   obtenerEvento,
@@ -81,19 +80,28 @@ export function PrediccionesPagina() {
 
     try {
       setError('')
-      setMensaje('Registrando apuesta...')
-      const apuesta = await registrarApuesta(sesion.accessToken, {
+      setMensaje('Registrando apuesta en tu billetera virtual...')
+      
+      // 1. Envía la apuesta al backend (esta petición ejecutará tu lógica que resta saldo)
+      await registrarApuesta(sesion.accessToken, {
         pelea_id: pelea.id,
         peleador_seleccionado_id: formulario.peleadorId,
         monto,
         metodo_victoria: formulario.metodo || null,
         round: formulario.round ? Number(formulario.round) : null,
       })
-      const checkout = await crearCheckout(sesion.accessToken, apuesta.id)
-      window.location.assign(checkout.checkout_url)
-    } catch {
+
+      // 2. ÉXITO LOCAL: Flujo simulado con el crédito virtual sin pasar por Stripe
+      setMensaje('¡Apuesta registrada con éxito usando tu saldo virtual!')
+      
+      // Limpia el mensaje de éxito tras 4 segundos
+      setTimeout(() => setMensaje(''), 4000)
+
+    } catch (err: any) {
       setMensaje('')
-      setError('No se pudo registrar la apuesta o crear el checkout.')
+      // Captura el mensaje detallado del backend (como "Saldo insuficiente") si rebota
+      const msgError = err?.response?.data?.detail ?? 'No se pudo registrar la apuesta.'
+      setError(msgError)
     }
   }
 
@@ -140,7 +148,7 @@ export function PrediccionesPagina() {
                       <ul className="m-0 grid list-none gap-2 p-0 text-sm">
                         {prediccion.factores.map((factor) => (
                           <li key={factor.nombre} className="rounded-lg bg-white/5 px-3 py-2">
-                            {factor.nombre}: {factor.peleador_rojo} vs {factor.peleador_azul} · peso {factor.peso}
+                            {factor.nombre} : {factor.peleador_rojo} vs {factor.peleador_azul} · peso {factor.peso}
                           </li>
                         ))}
                       </ul>
