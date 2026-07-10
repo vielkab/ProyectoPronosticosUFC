@@ -28,6 +28,7 @@ from app.core.seguridad import (
     verificar_password,
 )
 from app.usuarios.models import Usuario
+from app.billetera.models import Billetera
 from app.usuarios.schemas import UsuarioPublico
 
 MAX_INTENTOS_LOGIN = 5
@@ -112,6 +113,10 @@ def _buscar_usuario_por_correo(db: Session, correo: str) -> Usuario | None:
 
 def _buscar_usuario_por_nombre(db: Session, nombre: str) -> Usuario | None:
     return db.scalar(select(Usuario).where(Usuario.nombre == nombre.strip()))
+
+
+def _buscar_usuario_por_cedula(db: Session, cedula: str) -> Usuario | None:
+    return db.scalar(select(Usuario).where(Usuario.cedula == cedula.strip()))
 
 
 def _invalidar_codigos(db: Session, correo: str, proposito: str) -> None:
@@ -220,6 +225,12 @@ def registrar_nuevo_usuario(
             detail="Ya existe una cuenta con ese usuario o correo.",
         )
 
+    if _buscar_usuario_por_cedula(db, payload.cedula):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ya existe una cuenta registrada con esa cedula.",
+        )
+
     _crear_y_enviar_codigo(
         db,
         correo=correo_normalizado,
@@ -227,6 +238,9 @@ def registrar_nuevo_usuario(
         payload={
             "usuario": usuario_normalizado,
             "password_hash": generar_hash_password(payload.password),
+            "cedula": payload.cedula.strip(),
+            "fecha_nacimiento": payload.fecha_nacimiento.isoformat(),
+            "acepta_terminos": payload.acepta_terminos,
         },
         minutos_expiracion=MINUTOS_CODIGO_REGISTRO,
         asunto="Codigo de verificacion de PronoStats UFC",
@@ -268,15 +282,37 @@ def verificar_registro_usuario(
             detail="Ya existe una cuenta con ese usuario o correo.",
         )
 
+    cedula = datos_registro.get("cedula")
+    if cedula and _buscar_usuario_por_cedula(db, cedula):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ya existe una cuenta registrada con esa cedula.",
+        )
+
+    fecha_nacimiento_str = datos_registro.get("fecha_nacimiento")
+    fecha_nacimiento = datetime.fromisoformat(fecha_nacimiento_str) if fecha_nacimiento_str else None
+
     usuario = Usuario(
         nombre=usuario_nombre,
         correo=correo_normalizado,
         password_hash=password_hash,
         rol="usuario",
         activo=True,
+        cedula=cedula,
+        fecha_nacimiento=fecha_nacimiento,
+        acepta_terminos=datos_registro.get("acepta_terminos", False),
     )
 
     db.add(usuario)
+    
+    # Crear e inicializar la billetera del usuario
+    billetera = Billetera(
+        usuario=usuario,
+        saldo=0.0,
+        moneda="USD",
+    )
+    db.add(billetera)
+
     codigo.usado = True
     db.commit()
     db.refresh(usuario)

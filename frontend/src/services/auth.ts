@@ -22,6 +22,9 @@ type RegistroPayload = {
   usuario: string
   correo: string
   password: string
+  cedula: string
+  fecha_nacimiento: string
+  acepta_terminos: boolean
 }
 
 type LoginPayload = {
@@ -85,8 +88,15 @@ export async function restablecerPassword(
   return data
 }
 
-export async function obtenerMiPerfil(token: string): Promise<UsuarioAutenticado> {
-  const { data } = await api.get<UsuarioAutenticado>('/usuarios/yo', {
+export type PerfilUsuario = UsuarioAutenticado & {
+  activo: boolean
+  cedula: string | null
+  fecha_nacimiento: string | null
+  acepta_terminos: boolean
+}
+
+export async function obtenerMiPerfil(token: string): Promise<PerfilUsuario> {
+  const { data } = await api.get<PerfilUsuario>('/usuarios/yo', {
     headers: {
       Authorization: `Bearer ${token}`,
     },

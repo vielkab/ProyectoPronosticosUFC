@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, String, UniqueConstraint, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base import Base
 
@@ -18,6 +18,12 @@ class Usuario(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     rol: Mapped[str] = mapped_column(String(30), nullable=False, default="usuario")
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    
+    # Nuevos campos para verificación de edad e identidad
+    cedula: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
+    fecha_nacimiento: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    acepta_terminos: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    
     creado_en: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -29,3 +35,7 @@ class Usuario(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    # Relación con la billetera
+    billetera = relationship("Billetera", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
+
