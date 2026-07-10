@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Column, Integer, Float, String
+from sqlalchemy import Column, Float, Integer, JSON, String
 
 from app.core.base import Base
 
@@ -9,27 +8,26 @@ from app.core.base import Base
 class Peleador(Base):
     __tablename__ = "peleadores"
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(140), unique=True, nullable=False, index=True)
 
-    nombre = Column(String(140), unique=True, nullable=False)
+    # Datos demográficos
+    division: str = Column(String(80), nullable=False, default="")
+    pais: str = Column(String(80), nullable=False, default="")
+    record: str = Column(String(40), nullable=False, default="")
+    edad = Column(Integer, nullable=True)
+    altura_cm = Column(Float, nullable=True)
+    alcance_cm = Column(Float, nullable=True)
 
-    altura_cm = Column(Float)
-    alcance_cm = Column(Float)
+    # Estadísticas para el motor de pronósticos
+    win_rate = Column(Float, nullable=False, default=0.0)
+    ultimas_cinco: str = Column(String(10), nullable=False, default="")
+    significant_strikes_pm = Column(Float, nullable=False, default=0.0)
+    takedown_accuracy = Column(Float, nullable=False, default=0.0)
+    takedown_defense = Column(Float, nullable=False, default=0.0)
 
-    victorias = Column(Integer)
-    derrotas = Column(Integer)
-    empates = Column(Integer)
-    wins_dq = Column(Integer)
+    # Estadísticas extendidas (JSON libre para datos de la API)
+    estadisticas = Column(JSON, nullable=True)
 
-    striking_accuracy = Column(Float)
-    striking_defense = Column(Float)
-
-    wins_ko_tko = Column(Integer)
-    wins_submission = Column(Integer)
-    wins_decision = Column(Integer)
-
-    wins_round_1 = Column(Integer)
-    wins_round_2 = Column(Integer)
-    wins_round_3 = Column(Integer)
-    wins_round_4 = Column(Integer)
-    wins_round_5 = Column(Integer)
+    # Referencia a la fuente externa (API-Sports)
+    fuente_externa_id: str | None = Column(String(80), unique=True, nullable=True)

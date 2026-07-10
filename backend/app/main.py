@@ -5,6 +5,7 @@ from app.api import api_router
 from app.auth.bootstrap import asegurar_admin_inicial
 from app.core.base_de_datos import aplicar_migraciones, inicializar_base_de_datos
 from app.core.configuracion import ajustes
+from app.historico.loader import load_historical_datasets
 from app.peleadores.seed import poblar_peleadores
 
 
@@ -31,10 +32,10 @@ def crear_aplicacion() -> FastAPI:
 
     @aplicacion.on_event("startup")
     def al_iniciar_aplicacion() -> None:
+        load_historical_datasets()
         aplicar_migraciones()
         inicializar_base_de_datos()
         asegurar_admin_inicial()
-        poblar_peleadores()
 
     @aplicacion.get("/salud", tags=["salud"])
     def obtener_salud() -> dict[str, str]:

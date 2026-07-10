@@ -1,0 +1,39 @@
+import pandas as pd
+
+from sklearn.model_selection import train_test_split
+
+from xgboost import XGBClassifier
+
+from joblib import dump
+
+df = pd.read_csv("training_dataset.csv")
+
+X = df[
+    [
+        "delta_height",
+        "delta_reach",
+        "delta_wins",
+        "delta_losses",
+        "delta_draws",
+        "delta_str_acc",
+        "delta_str_def",
+        "delta_ko",
+        "delta_sub",
+        "delta_decision"
+    ]
+]
+
+y = df["round"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42
+)
+
+round_model = XGBClassifier()
+
+round_model.fit(X_train, y_train)
+
+dump(round_model, "round_model.joblib")

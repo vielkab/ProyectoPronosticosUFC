@@ -30,6 +30,7 @@ AGENTS.md
 DOCKER_POSTGRES.md
 
 # Variables de entorno locales
+backend/.env
 .env
 backend/.env
 frontend/.env

@@ -16,7 +16,8 @@ def obtener_prediccion_endpoint(
     return obtener_prediccion(db, pelea_id)
 
 
-@router.get("/predictions/{fight_id}", response_model=PrediccionCombate)
+# Alias temporal para consumidores que ya usaban el nombre inglés.
+@router.get("/predictions/{fight_id}", response_model=PrediccionCombate, include_in_schema=False)
 def obtener_prediccion_alias_endpoint(
     fight_id: int,
     db: Session = Depends(obtener_db),

@@ -52,6 +52,14 @@ def configurar_engine(database_url: str) -> None:
 
 
 def aplicar_migraciones() -> None:
+    import os
+    # Con --reload uvicorn lanza dos procesos. Solo el proceso hijo (server process)
+    # debe correr migraciones. El proceso padre (reloader) tiene WatchFiles activo.
+    # Usamos una variable de entorno para asegurarnos de correr solo una vez.
+    if os.environ.get("_MIGRACIONES_APLICADAS") == "1":
+        return
+    os.environ["_MIGRACIONES_APLICADAS"] = "1"
+
     configuracion = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
     configuracion.set_main_option("sqlalchemy.url", ajustes.database_url)
     command.upgrade(configuracion, "head")
