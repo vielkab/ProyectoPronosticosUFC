@@ -12,6 +12,7 @@ from app.admin.schemas import (
     PeleaAdminDetalle,
     PeleaAdminResumen,
     PeleadorBusquedaAdmin,
+    PrediccionAdminResumen,
     RegistrarResultadoEntrada,
     ResumenAdmin,
     ResumenBilletera,
@@ -29,6 +30,8 @@ from app.admin.service import (
     editar_pelea_admin,
     listar_apuestas_admin,
     listar_peleas_admin,
+    listar_peleadores_por_division,
+    listar_predicciones_admin,
     listar_usuarios_admin,
     obtener_pelea_admin,
     obtener_resumen_admin,
@@ -209,6 +212,15 @@ def buscar_peleadores_admin_endpoint(
     return buscar_peleadores_admin(db, q)
 
 
+@router.get("/peleadores/por-division", response_model=list[PeleadorBusquedaAdmin])
+def listar_peleadores_por_division_endpoint(
+    division: str = Query(min_length=2),
+    db: Session = Depends(obtener_db),
+    _: Usuario = Depends(requerir_admin),
+) -> list[PeleadorBusquedaAdmin]:
+    return listar_peleadores_por_division(db, division)
+
+
 # ── Billetera admin ───────────────────────────────────────────────────────────
 
 @router.get("/billetera/resumen", response_model=ResumenBilletera)
@@ -217,3 +229,13 @@ def obtener_resumen_billetera_endpoint(
     _: Usuario = Depends(requerir_admin),
 ) -> ResumenBilletera:
     return obtener_resumen_billetera_admin(db)
+
+
+# ── Predicciones admin ────────────────────────────────────────────────────────
+
+@router.get("/predicciones", response_model=list[PrediccionAdminResumen])
+def listar_predicciones_admin_endpoint(
+    db: Session = Depends(obtener_db),
+    _: Usuario = Depends(requerir_admin),
+) -> list[PrediccionAdminResumen]:
+    return listar_predicciones_admin(db)

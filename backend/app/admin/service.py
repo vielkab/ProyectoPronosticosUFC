@@ -139,12 +139,14 @@ def _cargar_pelea(db: Session, pelea_id: int) -> Pelea:
 
 
 def _mapear_pelea_resumen(pelea: Pelea) -> PeleaAdminResumen:
+    hora_str = pelea.evento.hora.strftime("%H:%M") if pelea.evento.hora else None
     return PeleaAdminResumen(
         id=pelea.id,
         evento=pelea.evento.nombre,
         categoria=pelea.division,
         estado=pelea.estado,
         fecha_hora=str(pelea.evento.fecha) if pelea.evento.fecha else None,
+        hora=hora_str,
         peleador_rojo_id=pelea.peleador_rojo_id,
         peleador_azul_id=pelea.peleador_azul_id,
         peleador_rojo=PeleadorBasicoSalida(id=pelea.peleador_rojo.id, nombre=pelea.peleador_rojo.nombre),
@@ -184,12 +186,22 @@ def obtener_pelea_admin(db: Session, pelea_id: int) -> PeleaAdminDetalle:
 
 
 def crear_pelea_admin(db: Session, payload: CrearPeleaAdminEntrada) -> PeleaAdminDetalle:
+    from datetime import time as time_type
     rojo = db.get(Peleador, payload.peleador_rojo_id)
     if not rojo:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Peleador rojo no encontrado en la base de datos.")
     azul = db.get(Peleador, payload.peleador_azul_id)
     if not azul:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Peleador azul no encontrado en la base de datos.")
+
+    # Parsear hora opcional
+    hora_parsed: time_type | None = None
+    if payload.hora:
+        try:
+            partes = payload.hora.strip().split(":")
+            hora_parsed = time_type(int(partes[0]), int(partes[1]))
+        except (ValueError, IndexError):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Formato de hora inválido. Use HH:MM.")
 
     evento = db.scalar(
         select(Evento).where(Evento.nombre == payload.evento.strip(), Evento.fecha == payload.fecha)
@@ -198,11 +210,16 @@ def crear_pelea_admin(db: Session, payload: CrearPeleaAdminEntrada) -> PeleaAdmi
         evento = Evento(
             nombre=payload.evento.strip(),
             fecha=payload.fecha,
+            hora=hora_parsed,
             sede=payload.sede.strip(),
             estado="programado",
         )
         db.add(evento)
         db.flush()
+    else:
+        # Actualizar hora si se proporcionó
+        if hora_parsed is not None:
+            evento.hora = hora_parsed
 
     pelea = Pelea(
         evento_id=evento.id,
@@ -215,6 +232,14 @@ def crear_pelea_admin(db: Session, payload: CrearPeleaAdminEntrada) -> PeleaAdmi
     db.add(pelea)
     db.commit()
     db.refresh(pelea)
+
+    # Generar pronóstico automáticamente al crear la pelea
+    try:
+        from app.predicciones.service import obtener_prediccion
+        obtener_prediccion(db, pelea.id)
+    except Exception:
+        pass  # No bloquear la creación si el pronóstico falla
+
     return obtener_pelea_admin(db, pelea.id)
 
 
@@ -425,7 +450,6 @@ def reactivar_usuario_admin(db: Session, usuario_id: int) -> MensajeRespuesta:
 # ── Búsqueda de peleadores en BD ──────────────────────────────────────────────
 
 def buscar_peleadores_admin(db: Session, q: str) -> list[PeleadorBusquedaAdmin]:
-    from app.admin.schemas import PeleadorBusquedaAdmin
     termino = q.strip().lower()
     if not termino:
         return []
@@ -444,6 +468,52 @@ def buscar_peleadores_admin(db: Session, q: str) -> list[PeleadorBusquedaAdmin]:
             pais=p.pais or "",
         )
         for p in peleadores
+    ]
+
+
+def listar_peleadores_por_division(db: Session, division: str) -> list[PeleadorBusquedaAdmin]:
+    """
+    Devuelve peleadores de la BD que coincidan con la división.
+    Si hay menos de 5, intenta sincronizar desde la API primero.
+    """
+    from app.eventos.mma_api_client import MmaApiClient
+    from app.eventos.service import _upsert_peleador
+
+    division_limpia = division.strip()
+    if not division_limpia:
+        return []
+
+    def _consultar_bd() -> list[Peleador]:
+        return db.scalars(
+            select(Peleador)
+            .where(Peleador.division.ilike(division_limpia))
+            .order_by(Peleador.nombre.asc())
+        ).all()
+
+    en_bd = _consultar_bd()
+
+    # Si hay pocos, intentar sincronizar desde la API (no falla si la API no responde)
+    if len(en_bd) < 5:
+        try:
+            cliente = MmaApiClient()
+            if cliente.esta_configurado():
+                externos = cliente.obtener_peleadores(categoria=division_limpia)
+                for externo in externos:
+                    _upsert_peleador(db, externo)
+                db.commit()
+                en_bd = _consultar_bd()
+        except Exception:
+            pass  # Si la API falla, usamos lo que hay en BD
+
+    return [
+        PeleadorBusquedaAdmin(
+            id=p.id,
+            nombre=p.nombre,
+            division=p.division or "",
+            record=p.record or "",
+            pais=p.pais or "",
+        )
+        for p in en_bd
     ]
 
 
@@ -496,3 +566,39 @@ def obtener_resumen_billetera_admin(db: Session) -> ResumenBilletera:
             for t in transacciones
         ],
     )
+
+
+# ── Predicciones admin ────────────────────────────────────────────────────────
+
+def listar_predicciones_admin(db: Session) -> list[dict]:
+    from app.predicciones.models import Prediccion
+    from sqlalchemy.orm import selectinload as _sl
+
+    predicciones = db.scalars(
+        select(Prediccion)
+        .options(
+            _sl(Prediccion.pelea).selectinload(Pelea.peleador_rojo),
+            _sl(Prediccion.pelea).selectinload(Pelea.peleador_azul),
+            _sl(Prediccion.pelea).selectinload(Pelea.evento),
+        )
+        .order_by(Prediccion.id.desc())
+    ).all()
+
+    resultado = []
+    for p in predicciones:
+        pelea = p.pelea
+        resultado.append({
+            "prediccion_id": p.id,
+            "pelea_id": p.pelea_id,
+            "evento": pelea.evento.nombre if pelea.evento else "—",
+            "fecha": str(pelea.evento.fecha) if pelea.evento else None,
+            "peleador_rojo": pelea.peleador_rojo.nombre if pelea.peleador_rojo else "—",
+            "peleador_azul": pelea.peleador_azul.nombre if pelea.peleador_azul else "—",
+            "probabilidad_rojo": p.probabilidad_rojo,
+            "probabilidad_azul": p.probabilidad_azul,
+            "cuota_rojo": p.cuota_rojo,
+            "cuota_azul": p.cuota_azul,
+            "acertada": p.acertada,
+            "explicacion": p.explicacion,
+        })
+    return resultado

@@ -21,6 +21,10 @@ class PrediccionCombate(BaseModel):
     peleador_azul_id: int
     probabilidad_rojo: float
     probabilidad_azul: float
+    cuota_rojo: float
+    cuota_azul: float
+    cuota_rojo_con_pronostico: float  # cuota × 0.90
+    cuota_azul_con_pronostico: float  # cuota × 0.90
     method: dict[str, OpcionMercado] = Field(default_factory=dict)
     round: dict[str, OpcionMercado] = Field(default_factory=dict)
     method_disponible: bool = False

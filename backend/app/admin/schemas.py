@@ -58,6 +58,7 @@ class PeleaAdminResumen(BaseModel):
     categoria: str
     estado: str
     fecha_hora: str | None
+    hora: str | None
     peleador_rojo_id: int
     peleador_azul_id: int
     peleador_rojo: PeleadorBasicoSalida
@@ -72,6 +73,7 @@ class CrearPeleaAdminEntrada(BaseModel):
     evento: str = Field(min_length=2, max_length=160)
     categoria: str = Field(default="", max_length=80)
     fecha: date
+    hora: str | None = Field(default=None, description="HH:MM en formato 24h, ej: 20:00")
     sede: str = Field(default="", max_length=160)
     peleador_rojo_id: int = Field(gt=0)
     peleador_azul_id: int = Field(gt=0)
@@ -164,3 +166,20 @@ class ResumenBilletera(BaseModel):
     pagos_ganadores: float
     utilidad_neta: float
     transacciones_recientes: list[TransaccionAdminResumen]
+
+
+# ── Predicciones admin ────────────────────────────────────────────────────────
+
+class PrediccionAdminResumen(BaseModel):
+    prediccion_id: int
+    pelea_id: int
+    evento: str
+    fecha: str | None
+    peleador_rojo: str
+    peleador_azul: str
+    probabilidad_rojo: float
+    probabilidad_azul: float
+    cuota_rojo: float | None
+    cuota_azul: float | None
+    acertada: bool | None
+    explicacion: str

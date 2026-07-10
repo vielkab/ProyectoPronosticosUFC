@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, String, Text, Time, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base import Base
@@ -18,6 +18,7 @@ class Evento(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     nombre: Mapped[str] = mapped_column(String(160), nullable=False, index=True)
     fecha: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    hora: Mapped[time | None] = mapped_column(Time, nullable=True)
     sede: Mapped[str] = mapped_column(String(160), nullable=False, default="")
     estado: Mapped[str] = mapped_column(String(30), nullable=False, default="programado")
     fuente_externa_id: Mapped[str | None] = mapped_column(String(80), unique=True, nullable=True)

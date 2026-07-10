@@ -15,6 +15,8 @@ class Prediccion(Base):
     pelea_id: Mapped[int] = mapped_column(ForeignKey("peleas.id"), nullable=False, unique=True, index=True)
     probabilidad_rojo: Mapped[float] = mapped_column(Float, nullable=False)
     probabilidad_azul: Mapped[float] = mapped_column(Float, nullable=False)
+    cuota_rojo: Mapped[float | None] = mapped_column(Float, nullable=True)
+    cuota_azul: Mapped[float | None] = mapped_column(Float, nullable=True)
     factores: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     explicacion: Mapped[str] = mapped_column(Text, nullable=False)
     acertada: Mapped[bool | None] = mapped_column(nullable=True)

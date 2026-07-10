@@ -2,15 +2,32 @@ import { useEffect, useRef, useState } from 'react'
 
 import { useAutenticacion } from '../hooks/useAutenticacion'
 import {
-  buscarPeleadoresAdmin,
   cambiarEstadoPeleaAdmin,
   cancelarPeleaAdmin,
   crearPeleaAdmin,
+  listarPeleadoresPorDivision,
   listarPeleasAdmin,
   registrarResultadoAdmin,
   type PeleaAdminResumen,
   type PeleadorBusquedaAdmin,
 } from '../services/admin'
+
+// Divisiones oficiales UFC
+const DIVISIONES_UFC = [
+  'Strawweight',
+  'Flyweight',
+  'Bantamweight',
+  'Featherweight',
+  'Lightweight',
+  'Welterweight',
+  'Middleweight',
+  'Light Heavyweight',
+  'Heavyweight',
+  "Women's Strawweight",
+  "Women's Flyweight",
+  "Women's Bantamweight",
+  "Women's Featherweight",
+]
 
 const ESTADOS_PELEA = ['programada', 'en_curso', 'finalizada', 'cancelada'] as const
 
@@ -24,103 +41,127 @@ function badgeEstado(estado: string) {
   return `inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${colores[estado] ?? 'bg-white/10 text-slate-300'}`
 }
 
-// ── Buscador de peleador ───────────────────────────────────────────────────────
+// ── Selector de peleador con búsqueda ─────────────────────────────────────────
 
-type BuscadorPeleadorProps = {
+type SelectorPeleadorProps = {
   label: string
-  token: string
+  peleadores: PeleadorBusquedaAdmin[]
   seleccionado: PeleadorBusquedaAdmin | null
-  onSeleccionar: (p: PeleadorBusquedaAdmin) => void
+  onSeleccionar: (p: PeleadorBusquedaAdmin | null) => void
   excluirId?: number
+  deshabilitado?: boolean
 }
 
-function BuscadorPeleador({ label, token, seleccionado, onSeleccionar, excluirId }: BuscadorPeleadorProps) {
+function SelectorPeleador({ label, peleadores, seleccionado, onSeleccionar, excluirId, deshabilitado }: SelectorPeleadorProps) {
   const [query, setQuery] = useState('')
-  const [resultados, setResultados] = useState<PeleadorBusquedaAdmin[]>([])
-  const [buscando, setBuscando] = useState(false)
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [abierto, setAbierto] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
 
-  function buscar(valor: string) {
-    setQuery(valor)
-    if (timer.current) clearTimeout(timer.current)
-    if (!valor.trim()) { setResultados([]); return }
-    timer.current = setTimeout(async () => {
-      setBuscando(true)
-      try {
-        const res = await buscarPeleadoresAdmin(token, valor)
-        setResultados(res.filter(p => p.id !== excluirId))
-      } finally { setBuscando(false) }
-    }, 300)
-  }
+  const filtrados = peleadores.filter(
+    p => p.id !== excluirId && p.nombre.toLowerCase().includes(query.toLowerCase())
+  )
 
-  function seleccionar(p: PeleadorBusquedaAdmin) {
-    onSeleccionar(p)
-    setQuery(p.nombre)
-    setResultados([])
+  useEffect(() => {
+    function cerrar(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setAbierto(false)
+    }
+    document.addEventListener('mousedown', cerrar)
+    return () => document.removeEventListener('mousedown', cerrar)
+  }, [])
+
+  function limpiar() {
+    onSeleccionar(null)
+    setQuery('')
   }
 
   return (
-    <div className="relative flex flex-col gap-1">
+    <div ref={ref} className="relative flex flex-col gap-1">
       <label className="text-sm text-slate-300">{label}</label>
-      {seleccionado && (
-        <p className="text-xs text-emerald-400">✓ {seleccionado.nombre} ({seleccionado.division})</p>
-      )}
-      <input
-        className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400"
-        placeholder="Escribir nombre..."
-        type="text"
-        value={query}
-        onChange={(e) => buscar(e.target.value)}
-      />
-      {buscando && <p className="text-xs text-slate-400">Buscando...</p>}
-      {resultados.length > 0 && (
-        <ul className="absolute top-full z-20 mt-1 w-full rounded-xl border border-white/10 bg-slate-900 shadow-xl">
-          {resultados.map((p) => (
-            <li key={p.id}>
-              <button
-                className="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/5"
-                type="button"
-                onClick={() => seleccionar(p)}
-              >
-                {p.nombre} <span className="text-xs text-slate-400">· {p.division} · {p.record}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-      {!buscando && query.trim() && resultados.length === 0 && (
-        <p className="text-xs text-slate-500">Sin resultados. Sincroniza la API primero.</p>
+      {seleccionado ? (
+        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2">
+          <span className="flex-1 text-sm font-medium text-emerald-300">{seleccionado.nombre}</span>
+          <span className="text-xs text-slate-400">{seleccionado.record}</span>
+          {!deshabilitado && (
+            <button className="ml-1 text-slate-400 hover:text-white" type="button" onClick={limpiar}>✕</button>
+          )}
+        </div>
+      ) : (
+        <>
+          <input
+            className="w-full rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400 disabled:opacity-40"
+            disabled={deshabilitado}
+            placeholder={deshabilitado ? 'Selecciona la división primero' : 'Filtrar por nombre...'}
+            type="text"
+            value={query}
+            onFocus={() => setAbierto(true)}
+            onChange={e => { setQuery(e.target.value); setAbierto(true) }}
+          />
+          {abierto && !deshabilitado && (
+            <ul className="absolute top-full z-20 mt-1 max-h-52 w-full overflow-y-auto rounded-xl border border-white/10 bg-slate-900 shadow-xl">
+              {filtrados.length === 0 && (
+                <li className="px-3 py-2 text-xs text-slate-500">
+                  {peleadores.length === 0 ? 'Sin peleadores en BD para esta división. Sincroniza la API.' : 'Sin resultados.'}
+                </li>
+              )}
+              {filtrados.map(p => (
+                <li key={p.id}>
+                  <button
+                    className="w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/5"
+                    type="button"
+                    onClick={() => { onSeleccionar(p); setAbierto(false); setQuery('') }}
+                  >
+                    {p.nombre} <span className="text-xs text-slate-400">· {p.record} · {p.pais}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
     </div>
   )
 }
 
-// ── Formulario crear pelea ─────────────────────────────────────────────────────
+// ── Formulario crear pelea ────────────────────────────────────────────────────
 
 type FormCrearPeleaProps = { token: string; onCreada: () => void; onCancelar: () => void }
 
 function FormCrearPelea({ token, onCreada, onCancelar }: FormCrearPeleaProps) {
   const [evento, setEvento] = useState('')
   const [fecha, setFecha] = useState('')
+  const [hora, setHora] = useState('')
   const [sede, setSede] = useState('')
-  const [categoria, setCategoria] = useState('')
+  const [division, setDivision] = useState('')
   const [orden, setOrden] = useState('1')
+  const [peleadores, setPeleadores] = useState<PeleadorBusquedaAdmin[]>([])
+  const [cargandoPeleadores, setCargandoPeleadores] = useState(false)
   const [rojo, setRojo] = useState<PeleadorBusquedaAdmin | null>(null)
   const [azul, setAzul] = useState<PeleadorBusquedaAdmin | null>(null)
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
 
+  // Al cambiar división, cargar peleadores y limpiar selección
+  useEffect(() => {
+    if (!division) { setPeleadores([]); setRojo(null); setAzul(null); return }
+    setCargandoPeleadores(true)
+    listarPeleadoresPorDivision(token, division)
+      .then(res => { setPeleadores(res); setRojo(null); setAzul(null) })
+      .catch(() => setPeleadores([]))
+      .finally(() => setCargandoPeleadores(false))
+  }, [division, token])
+
   async function guardar() {
+    if (!division) { setError('Selecciona una división.'); return }
     if (!rojo || !azul) { setError('Debes seleccionar ambos peleadores.'); return }
-    if (!evento.trim() || !fecha) { setError('Evento y fecha son obligatorios.'); return }
+    if (!evento.trim() || !fecha) { setError('El nombre del evento y la fecha son obligatorios.'); return }
     try {
-      setGuardando(true)
-      setError('')
+      setGuardando(true); setError('')
       await crearPeleaAdmin(token, {
         evento: evento.trim(),
         fecha,
+        hora: hora || null,
         sede: sede.trim(),
-        categoria: categoria.trim(),
+        categoria: division,
         peleador_rojo_id: rojo.id,
         peleador_azul_id: azul.id,
         estado: 'programada',
@@ -137,32 +178,57 @@ function FormCrearPelea({ token, onCreada, onCancelar }: FormCrearPeleaProps) {
     <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
       <h3 className="mb-4 font-bold text-white">Nueva pelea</h3>
       {error && <p className="mb-3 rounded-lg bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
           <label className="text-sm text-slate-300">Nombre del evento *</label>
-          <input className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400" value={evento} onChange={e => setEvento(e.target.value)} placeholder="UFC 310" />
+          <input className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400" placeholder="UFC 310" value={evento} onChange={e => setEvento(e.target.value)} />
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm text-slate-300">Fecha *</label>
           <input className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400" type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-slate-300">Sede</label>
-          <input className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400" value={sede} onChange={e => setSede(e.target.value)} placeholder="Las Vegas" />
+          <label className="text-sm text-slate-300">Hora del evento</label>
+          <input className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400" type="time" value={hora} onChange={e => setHora(e.target.value)} placeholder="20:00" />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-slate-300">División</label>
-          <input className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400" value={categoria} onChange={e => setCategoria(e.target.value)} placeholder="Lightweight" />
+          <label className="text-sm text-slate-300">Sede</label>
+          <input className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400" placeholder="Las Vegas" value={sede} onChange={e => setSede(e.target.value)} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm text-slate-300">División *</label>
+          <select
+            className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400"
+            value={division}
+            onChange={e => setDivision(e.target.value)}
+          >
+            <option value="">Selecciona una división...</option>
+            {DIVISIONES_UFC.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm text-slate-300">Orden en cartelera</label>
           <input className="rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400" type="number" min={1} value={orden} onChange={e => setOrden(e.target.value)} />
         </div>
       </div>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <BuscadorPeleador label="Peleador rojo *" token={token} seleccionado={rojo} onSeleccionar={setRojo} excluirId={azul?.id} />
-        <BuscadorPeleador label="Peleador azul *" token={token} seleccionado={azul} onSeleccionar={setAzul} excluirId={rojo?.id} />
-      </div>
+
+      {division && (
+        <div className="mt-4">
+          {cargandoPeleadores ? (
+            <p className="text-sm text-slate-400">Cargando peleadores de {division}...</p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SelectorPeleador label="Peleador rojo *" peleadores={peleadores} seleccionado={rojo} onSeleccionar={setRojo} excluirId={azul?.id} />
+              <SelectorPeleador label="Peleador azul *" peleadores={peleadores} seleccionado={azul} onSeleccionar={setAzul} excluirId={rojo?.id} />
+            </div>
+          )}
+          {!cargandoPeleadores && peleadores.length > 0 && (
+            <p className="mt-2 text-xs text-slate-500">{peleadores.length} peleador(es) disponibles en la división {division}</p>
+          )}
+        </div>
+      )}
+
       <div className="mt-5 flex gap-3">
         <button className="rounded-full border border-white/10 px-4 py-2 text-sm text-slate-300 hover:border-white/30" type="button" onClick={onCancelar}>Cancelar</button>
         <button className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400 disabled:opacity-50" disabled={guardando} type="button" onClick={guardar}>
@@ -296,7 +362,9 @@ export function AdminPeleasPagina() {
       {mensaje && <p className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">{mensaje}</p>}
       {error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-100">{error}</p>}
       {cargando && <p className="text-slate-400">Cargando peleas...</p>}
-      {!cargando && peleas.length === 0 && <p className="text-slate-400">No hay peleas registradas. Crea una o sincroniza la API.</p>}
+      {!cargando && peleas.length === 0 && (
+        <p className="text-slate-400">No hay peleas registradas. Crea una o sincroniza la API desde Resumen.</p>
+      )}
 
       <div className="flex flex-col gap-4">
         {peleas.map(pelea => (
@@ -306,7 +374,9 @@ export function AdminPeleasPagina() {
                 <p className="font-bold text-white">
                   #{pelea.id} · {pelea.peleador_rojo.nombre} <span className="text-slate-400">vs</span> {pelea.peleador_azul.nombre}
                 </p>
-                <p className="mt-1 text-sm text-slate-400">{pelea.evento} · {pelea.fecha_hora ?? '—'} · {pelea.categoria || 'Sin categoría'}</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {pelea.evento} · {pelea.fecha_hora ?? '—'}{pelea.hora ? ` ${pelea.hora}` : ''} · {pelea.categoria || 'Sin categoría'}
+                </p>
               </div>
               <span className={badgeEstado(pelea.estado)}>{pelea.estado}</span>
             </div>

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, Float, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base import Base
@@ -19,6 +19,7 @@ class Apuesta(Base):
     round: Mapped[int | None] = mapped_column(nullable=True)
     monto: Mapped[float] = mapped_column(Float, nullable=False)
     cuota: Mapped[float] = mapped_column(Float, nullable=False, default=1.8)
+    ver_pronostico: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     estado: Mapped[str] = mapped_column(String(30), nullable=False, default="Pendiente")
     estado_pago: Mapped[str] = mapped_column(String(30), nullable=False, default="pendiente")
     creado_en: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
