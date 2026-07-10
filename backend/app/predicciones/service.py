@@ -9,39 +9,34 @@ from app.eventos.service import _asegurar_datos_demo
 from app.peleadores.models import Peleador
 from app.predicciones.models import Prediccion
 from app.predicciones.schemas import FactorPrediccion, PrediccionCombate
+from ml.predictor import ModeloNoDisponible, predict
 
 
 PESOS_FACTORES = {
-    "win_rate": 0.28,
-    "ultimas_cinco": 0.20,
-    "significant_strikes_pm": 0.16,
-    "takedown_accuracy": 0.14,
-    "takedown_defense": 0.14,
-    "alcance_cm": 0.04,
-    "edad": 0.04,
+    "win_rate": 0.30,
+    "striking_accuracy": 0.18,
+    "striking_defense": 0.16,
+    "wins_ko_tko": 0.10,
+    "wins_submission": 0.08,
+    "alcance_cm": 0.10,
+    "experiencia": 0.08,
 }
 
-
-def _racha_reciente(ultimas_cinco: str) -> float:
-    resultados = [letra for letra in ultimas_cinco.upper() if letra in {"W", "L"}][:5]
-    if not resultados:
-        return 0.5
-    return resultados.count("W") / len(resultados)
-
-
 def _normalizar_par(valor_a: float, valor_b: float) -> tuple[float, float]:
-    total = max(valor_a + valor_b, 0.0001)
+    total = valor_a + valor_b
+    if total <= 0:
+        return 0.5, 0.5
     return valor_a / total, valor_b / total
 
 
 def _valor_factor(peleador: Peleador, nombre: str) -> float:
-    if nombre == "ultimas_cinco":
-        return _racha_reciente(peleador.ultimas_cinco)
-    if nombre == "edad":
-        if peleador.edad is None:
-            return 0.5
-        return max(0.0, 1 - abs(peleador.edad - 30) / 20)
-    valor = getattr(peleador, nombre)
+    if nombre == "win_rate":
+        victorias = float(peleador.victorias or 0)
+        total = victorias + float(peleador.derrotas or 0) + float(peleador.empates or 0)
+        return victorias / total if total else 0.5
+    if nombre == "experiencia":
+        return float((peleador.victorias or 0) + (peleador.derrotas or 0) + (peleador.empates or 0))
+    valor = getattr(peleador, nombre, 0.0)
     return float(valor or 0.0)
 
 
@@ -83,29 +78,54 @@ def obtener_prediccion(db: Session, pelea_id: int) -> PrediccionCombate:
             detail="La pelea no tiene peleadores validos para calcular prediccion.",
         )
 
-    factores, prob_rojo, prob_azul = _calcular_factores(rojo, azul)
+    factores, prob_rojo_heuristica, prob_azul_heuristica = _calcular_factores(rojo, azul)
+    try:
+        prediccion_modelo = predict(rojo, azul)
+        ganador_modelo = prediccion_modelo["winner"]
+        prob_rojo = ganador_modelo["fighter_a_probability"]
+        prob_azul = ganador_modelo["fighter_b_probability"]
+        metodos = prediccion_modelo.get("method", {})
+        rounds = prediccion_modelo.get("round", {})
+        origen = "modelo de Machine Learning"
+    except ModeloNoDisponible:
+        # La aplicación sigue operativa en instalaciones donde aún no se entrenó
+        # el modelo; nunca se presenta esta estimación como ML.
+        prob_rojo, prob_azul = prob_rojo_heuristica, prob_azul_heuristica
+        metodos, rounds = {}, {}
+        origen = "estimación estadística de respaldo"
+
+    total_probabilidades = prob_rojo + prob_azul
+    if total_probabilidades <= 0:
+        prob_rojo, prob_azul = prob_rojo_heuristica, prob_azul_heuristica
+        metodos, rounds = {}, {}
+        origen = "estimación estadística de respaldo"
+    else:
+        prob_rojo /= total_probabilidades
+        prob_azul /= total_probabilidades
     prob_rojo_pct = round(prob_rojo * 100, 2)
     prob_azul_pct = round(100 - prob_rojo_pct, 2)
     favorito = rojo.nombre if prob_rojo_pct >= prob_azul_pct else azul.nombre
     explicacion = (
-        "Prediccion heuristica sin Machine Learning. "
-        f"Se ponderan win rate, forma reciente, striking, derribos, defensa, alcance y edad. "
+        f"Predicción generada por {origen}. "
+        "Los factores muestran récord, striking, métodos de victoria, alcance y experiencia. "
         f"El favorito estadistico es {favorito}."
     )
+    if not metodos or not rounds:
+        explicacion += " El modelo de método y/o round no está disponible todavía."
 
     prediccion = db.scalar(select(Prediccion).where(Prediccion.pelea_id == pelea_id))
     factores_json = [factor.model_dump() for factor in factores]
     if prediccion:
         prediccion.probabilidad_rojo = prob_rojo_pct
         prediccion.probabilidad_azul = prob_azul_pct
-        prediccion.factores = {"items": factores_json}
+        prediccion.factores = {"items": factores_json, "method": metodos, "round": rounds}
         prediccion.explicacion = explicacion
     else:
         prediccion = Prediccion(
             pelea_id=pelea_id,
             probabilidad_rojo=prob_rojo_pct,
             probabilidad_azul=prob_azul_pct,
-            factores={"items": factores_json},
+            factores={"items": factores_json, "method": metodos, "round": rounds},
             explicacion=explicacion,
         )
         db.add(prediccion)
@@ -118,6 +138,10 @@ def obtener_prediccion(db: Session, pelea_id: int) -> PrediccionCombate:
         peleador_azul_id=pelea.peleador_azul_id,
         probabilidad_rojo=prob_rojo_pct,
         probabilidad_azul=prob_azul_pct,
+        method=metodos,
+        round=rounds,
+        method_disponible=bool(metodos),
+        round_disponible=bool(rounds),
         factores=factores,
         explicacion=explicacion,
     )

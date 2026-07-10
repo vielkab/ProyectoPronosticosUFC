@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class FactorPrediccion(BaseModel):
@@ -6,6 +6,11 @@ class FactorPrediccion(BaseModel):
     peleador_rojo: float
     peleador_azul: float
     peso: float
+
+
+class OpcionMercado(BaseModel):
+    probability: float
+    odds: float | None
 
 
 class PrediccionCombate(BaseModel):
@@ -16,5 +21,9 @@ class PrediccionCombate(BaseModel):
     peleador_azul_id: int
     probabilidad_rojo: float
     probabilidad_azul: float
+    method: dict[str, OpcionMercado] = Field(default_factory=dict)
+    round: dict[str, OpcionMercado] = Field(default_factory=dict)
+    method_disponible: bool = False
+    round_disponible: bool = False
     factores: list[FactorPrediccion]
     explicacion: str

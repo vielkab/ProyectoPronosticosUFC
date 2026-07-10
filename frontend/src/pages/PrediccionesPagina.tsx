@@ -145,6 +145,24 @@ export function PrediccionesPagina() {
                         <strong className="rounded-lg bg-white/5 p-3">{nombres[pelea.peleador_azul_id]}: {prediccion.probabilidad_azul}%</strong>
                       </div>
                       <p className="text-sm text-slate-300">{prediccion.explicacion}</p>
+                      <div className="grid gap-3 sm:grid-cols-2 text-sm">
+                        <div className="rounded-lg bg-white/5 p-3">
+                          <p className="mb-2 font-bold">Método de victoria</p>
+                          {prediccion.method_disponible
+                            ? Object.entries(prediccion.method).map(([metodo, valor]) => (
+                              <p key={metodo}>{metodo}: {(valor.probability * 100).toFixed(1)}% · cuota {valor.odds ?? '-'}</p>
+                            ))
+                            : <p className="text-slate-400">Modelo no disponible</p>}
+                        </div>
+                        <div className="rounded-lg bg-white/5 p-3">
+                          <p className="mb-2 font-bold">Round de finalización</p>
+                          {prediccion.round_disponible
+                            ? Object.entries(prediccion.round).map(([round, valor]) => (
+                              <p key={round}>Round {round}: {(valor.probability * 100).toFixed(1)}% · cuota {valor.odds ?? '-'}</p>
+                            ))
+                            : <p className="text-slate-400">Modelo no disponible</p>}
+                        </div>
+                      </div>
                       <ul className="m-0 grid list-none gap-2 p-0 text-sm">
                         {prediccion.factores.map((factor) => (
                           <li key={factor.nombre} className="rounded-lg bg-white/5 px-3 py-2">

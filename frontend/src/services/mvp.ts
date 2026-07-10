@@ -73,14 +73,42 @@ export type FactorPrediccion = {
   peso: number
 }
 
+export type OpcionMercado = {
+  probability: number
+  odds: number | null
+}
+
 export type PrediccionCombate = {
   pelea_id: number
   peleador_rojo_id: number
   peleador_azul_id: number
   probabilidad_rojo: number
   probabilidad_azul: number
+  method: Record<string, OpcionMercado>
+  round: Record<string, OpcionMercado>
+  method_disponible: boolean
+  round_disponible: boolean
   factores: FactorPrediccion[]
   explicacion: string
+}
+
+export type PeleaHistorica = {
+  fecha: string
+  peleador_1: string
+  peleador_2: string
+  ganador: string
+}
+
+export type PaginaPeleasHistoricas = {
+  page: number
+  size: number
+  total: number
+  items: PeleaHistorica[]
+}
+
+export type RankingHistorico = {
+  rank: number
+  fighter: string
 }
 
 export type ApuestaResumen = {
@@ -153,6 +181,16 @@ export async function obtenerPeleador(id: number): Promise<PeleadorDetalle> {
 
 export async function obtenerPrediccion(peleaId: number): Promise<PrediccionCombate> {
   const { data } = await api.get<PrediccionCombate>(`/predicciones/${peleaId}`)
+  return data
+}
+
+export async function listarPeleasHistoricas(page = 1, size = 20): Promise<PaginaPeleasHistoricas> {
+  const { data } = await api.get<PaginaPeleasHistoricas>('/historico/peleas', { params: { page, size } })
+  return data
+}
+
+export async function obtenerRankings(division = 'Lightweight'): Promise<RankingHistorico[]> {
+  const { data } = await api.get<RankingHistorico[]>('/rankings', { params: { division } })
   return data
 }
 
