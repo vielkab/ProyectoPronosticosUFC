@@ -7,6 +7,8 @@ const enlacesPublicos = [
   { to: '/eventos', etiqueta: 'Carteleras' },
   { to: '/peleadores', etiqueta: 'Peleadores' },
   { to: '/predicciones', etiqueta: 'Pronósticos' },
+  { to: '/rankings', etiqueta: 'Rankings' },
+  { to: '/historico', etiqueta: 'Histórico' },
 ]
 
 function obtenerClasesEnlace(activo: boolean): string {

@@ -5,12 +5,14 @@ import { AdminPagina } from '../pages/AdminPagina'
 import { BilleteraPagina } from '../pages/BilleteraPagina'
 import { EventosPagina } from '../pages/EventosPagina'
 import { HistorialApuestasPagina } from '../pages/HistorialApuestasPagina'
+import { HistoricoPagina } from '../pages/HistoricoPagina'
 import { InicioPagina } from '../pages/InicioPagina'
 import { IniciarSesionPagina } from '../pages/IniciarSesionPagina'
 import { NoEncontradoPagina } from '../pages/NoEncontradoPagina'
 import { PeleadoresPagina } from '../pages/PeleadoresPagina'
 import { PerfilPagina } from '../pages/PerfilPagina'
 import { PrediccionesPagina } from '../pages/PrediccionesPagina'
+import { RankingsPagina } from '../pages/RankingsPagina'
 import { RecuperarPasswordCambioPagina } from '../pages/RecuperarPasswordCambioPagina'
 import { RecuperarPasswordCodigoPagina } from '../pages/RecuperarPasswordCodigoPagina'
 import { RegistroPagina } from '../pages/RegistroPagina'
@@ -32,6 +34,8 @@ export const proveedorRutas = createBrowserRouter([
       { path: 'eventos', element: <EventosPagina /> },
       { path: 'peleadores', element: <PeleadoresPagina /> },
       { path: 'predicciones', element: <PrediccionesPagina /> },
+      { path: 'rankings', element: <RankingsPagina /> },
+      { path: 'historico', element: <HistoricoPagina /> },
       {
         element: <RutaProtegida />,
         children: [
