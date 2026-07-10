@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 
 import {
   AutenticacionContexto,
@@ -28,25 +28,28 @@ function obtenerSesionInicial(): SesionAutenticada | null {
 export function ProveedorAutenticacion({ children }: ProveedorAutenticacionProps) {
   const [sesion, setSesion] = useState<SesionAutenticada | null>(() => obtenerSesionInicial())
 
-  const guardarSesion = (nuevaSesion: SesionAutenticada) => {
+  const guardarSesion = useCallback((nuevaSesion: SesionAutenticada) => {
     setSesion(nuevaSesion)
     localStorage.setItem(CLAVE_STORAGE, JSON.stringify(nuevaSesion))
-  }
+  }, [])
 
-  const cerrarSesion = () => {
+  const cerrarSesion = useCallback(() => {
     setSesion(null)
     localStorage.removeItem(CLAVE_STORAGE)
-  }
+  }, [])
+
+  const valor = useMemo(
+    () => ({
+      sesion,
+      autenticado: Boolean(sesion?.accessToken),
+      guardarSesion,
+      cerrarSesion,
+    }),
+    [cerrarSesion, guardarSesion, sesion],
+  )
 
   return (
-    <AutenticacionContexto.Provider
-      value={{
-        sesion,
-        autenticado: Boolean(sesion?.accessToken),
-        guardarSesion,
-        cerrarSesion,
-      }}
-    >
+    <AutenticacionContexto.Provider value={valor}>
       {children}
     </AutenticacionContexto.Provider>
   )

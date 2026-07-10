@@ -1,29 +1,26 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
 
-from app.peleadores.schemas import PeleadorResumen
+from app.core.base_de_datos import obtener_db
+from app.peleadores.schemas import PeleadorDetalle, PeleadorResumen
+from app.peleadores.service import listar_peleadores, obtener_peleador
 
 router = APIRouter(prefix="/peleadores", tags=["peleadores"])
 
 
 @router.get("", response_model=list[PeleadorResumen])
-def listar_peleadores(busqueda: str | None = Query(default=None)) -> list[PeleadorResumen]:
-    return [
-        PeleadorResumen(
-            id=1,
-            nombre="Peleador Demo",
-            division="Ligero",
-            pais="Ecuador",
-            busqueda=busqueda,
-        )
-    ]
+def listar_peleadores_endpoint(
+    busqueda: str | None = Query(default=None),
+    categoria: str = Query(default="Lightweight"),
+    db: Session = Depends(obtener_db),
+) -> list[PeleadorResumen]:
+    return listar_peleadores(db, busqueda, categoria)
 
 
-@router.get("/{peleador_id}", response_model=PeleadorResumen)
-def obtener_peleador(peleador_id: int) -> PeleadorResumen:
-    return PeleadorResumen(
-        id=peleador_id,
-        nombre="Peleador Demo",
-        division="Ligero",
-        pais="Ecuador",
-        busqueda=None,
-    )
+@router.get("/{peleador_id}", response_model=PeleadorDetalle)
+def obtener_peleador_endpoint(
+    peleador_id: int,
+    categoria: str = Query(default="Lightweight"),
+    db: Session = Depends(obtener_db),
+) -> PeleadorDetalle:
+    return obtener_peleador(db, peleador_id, categoria)

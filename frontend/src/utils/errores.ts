@@ -36,3 +36,7 @@ export function obtenerMensajeError(error: unknown, mensajePorDefecto: string): 
 
   return mensajePorDefecto
 }
+
+export function esErrorAutorizacion(error: unknown): boolean {
+  return axios.isAxiosError(error) && error.response?.status === 401
+}
