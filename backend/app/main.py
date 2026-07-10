@@ -36,7 +36,6 @@ def crear_aplicacion() -> FastAPI:
         aplicar_migraciones()
         inicializar_base_de_datos()
         asegurar_admin_inicial()
-        poblar_peleadores()
 
     @aplicacion.get("/salud", tags=["salud"])
     def obtener_salud() -> dict[str, str]:

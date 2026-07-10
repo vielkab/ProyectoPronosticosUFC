@@ -1,7 +1,12 @@
 import { createBrowserRouter } from 'react-router-dom'
 
+import { LayoutAdmin } from '../layouts/LayoutAdmin'
 import { LayoutPrincipal } from '../layouts/LayoutPrincipal'
+import { AdminApuestasPagina } from '../pages/AdminApuestasPagina'
+import { AdminBilleteraPagina } from '../pages/AdminBilleteraPagina'
 import { AdminPagina } from '../pages/AdminPagina'
+import { AdminPeleasPagina } from '../pages/AdminPeleasPagina'
+import { AdminUsuariosPagina } from '../pages/AdminUsuariosPagina'
 import { BilleteraPagina } from '../pages/BilleteraPagina'
 import { EventosPagina } from '../pages/EventosPagina'
 import { HistorialApuestasPagina } from '../pages/HistorialApuestasPagina'
@@ -17,9 +22,11 @@ import { RecuperarPasswordCambioPagina } from '../pages/RecuperarPasswordCambioP
 import { RecuperarPasswordCodigoPagina } from '../pages/RecuperarPasswordCodigoPagina'
 import { RegistroPagina } from '../pages/RegistroPagina'
 import { VerificarRegistroPagina } from '../pages/VerificarRegistroPagina'
+import { RutaAdmin } from './RutaAdmin'
 import { RutaProtegida } from './RutaProtegida'
 
 export const proveedorRutas = createBrowserRouter([
+  // ── Árbol de usuario ──────────────────────────────────────────────────────
   {
     path: '/',
     element: <LayoutPrincipal />,
@@ -44,11 +51,25 @@ export const proveedorRutas = createBrowserRouter([
           { path: 'apuestas/historial', element: <HistorialApuestasPagina /> },
         ],
       },
-      {
-        element: <RutaProtegida requiereAdmin />,
-        children: [{ path: 'admin', element: <AdminPagina /> }],
-      },
       { path: '*', element: <NoEncontradoPagina /> },
+    ],
+  },
+
+  // ── Árbol de admin ────────────────────────────────────────────────────────
+  {
+    path: '/admin',
+    element: <RutaAdmin />,
+    children: [
+      {
+        element: <LayoutAdmin />,
+        children: [
+          { index: true, element: <AdminPagina /> },
+          { path: 'peleas', element: <AdminPeleasPagina /> },
+          { path: 'apuestas', element: <AdminApuestasPagina /> },
+          { path: 'billetera', element: <AdminBilleteraPagina /> },
+          { path: 'usuarios', element: <AdminUsuariosPagina /> },
+        ],
+      },
     ],
   },
 ])

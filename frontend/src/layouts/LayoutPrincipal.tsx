@@ -19,7 +19,6 @@ function obtenerClasesEnlace(activo: boolean): string {
 
 export function LayoutPrincipal() {
   const { autenticado, cerrarSesion, sesion } = useAutenticacion()
-  const esAdmin = sesion?.usuario.rol === 'administrador'
 
   return (
     <div className="min-h-screen">
@@ -62,11 +61,11 @@ export function LayoutPrincipal() {
 
           <nav className="flex flex-wrap gap-3">
             {enlacesPublicos.map((enlace) => (
-              <NavLink key={enlace.to} className={({ isActive }) => obtenerClasesEnlace(isActive)} to={enlace.to}>
+              <NavLink key={enlace.to} className={({ isActive }) => obtenerClasesEnlace(isActive)} end={enlace.to === '/'} to={enlace.to}>
                 {enlace.etiqueta}
               </NavLink>
             ))}
-            {autenticado ? (
+            {autenticado && (
               <>
                 <NavLink className={({ isActive }) => obtenerClasesEnlace(isActive)} to="/billetera">
                   Billetera
@@ -75,12 +74,7 @@ export function LayoutPrincipal() {
                   Historial
                 </NavLink>
               </>
-            ) : null}
-            {autenticado && esAdmin ? (
-              <NavLink className={({ isActive }) => obtenerClasesEnlace(isActive)} to="/admin">
-                Admin
-              </NavLink>
-            ) : null}
+            )}
           </nav>
         </div>
       </header>
