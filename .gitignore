@@ -8,6 +8,7 @@ env/
 venv/
 .venv/
 
+
 # Python packaging
 build/
 dist/
@@ -27,3 +28,8 @@ yarn-error.log*
 TASKS.md
 AGENTS.md
 DOCKER_POSTGRES.md
+
+# Variables de entorno locales
+.env
+backend/.env
+frontend/.env
