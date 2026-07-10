@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 
@@ -12,3 +13,7 @@ class UsuarioPublico(BaseModel):
 
 class PerfilUsuario(UsuarioPublico):
     activo: bool
+    cedula: str | None = None
+    fecha_nacimiento: datetime | None = None
+    acepta_terminos: bool = False
+

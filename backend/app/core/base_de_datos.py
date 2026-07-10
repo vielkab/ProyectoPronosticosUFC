@@ -60,6 +60,28 @@ def obtener_db() -> Generator[Session, None, None]:
         sesion.close()
 
 
+def _auto_migrar_columnas() -> None:
+    from sqlalchemy import inspect
+    try:
+        inspector = inspect(engine)
+        columnas = [col["name"] for col in inspector.get_columns("usuarios")]
+        
+        with engine.begin() as conexion:
+            if "cedula" not in columnas:
+                # SQLite no soporta UNIQUE directamente en ALTER TABLE ADD COLUMN de la misma forma en algunas versiones antiguas,
+                # pero para este proyecto lo agregamos de manera compatible
+                conexion.execute(text("ALTER TABLE usuarios ADD COLUMN cedula VARCHAR(30) NULL"))
+                conexion.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_usuarios_cedula ON usuarios (cedula)"))
+            if "fecha_nacimiento" not in columnas:
+                # Usamos TIMESTAMP ya que es compatible tanto con SQLite como con PostgreSQL
+                conexion.execute(text("ALTER TABLE usuarios ADD COLUMN fecha_nacimiento TIMESTAMP NULL"))
+            if "acepta_terminos" not in columnas:
+                # Usamos DEFAULT FALSE ya que es el booleano estándar compatible con SQLite y PostgreSQL
+                conexion.execute(text("ALTER TABLE usuarios ADD COLUMN acepta_terminos BOOLEAN NOT NULL DEFAULT FALSE"))
+    except Exception as e:
+        logger.warning("No se pudieron migrar automaticamente las nuevas columnas: %s", str(e))
+
+
 def _asegurar_indices() -> None:
     with engine.begin() as conexion:
         conexion.execute(
@@ -70,6 +92,7 @@ def _asegurar_indices() -> None:
 def inicializar_base_de_datos() -> None:
     try:
         Base.metadata.create_all(bind=engine)
+        _auto_migrar_columnas()
         _asegurar_indices()
     except OperationalError:
         puede_hacer_fallback = (
@@ -88,4 +111,5 @@ def inicializar_base_de_datos() -> None:
         )
         configurar_engine(url_sqlite)
         Base.metadata.create_all(bind=engine)
+        _auto_migrar_columnas()
         _asegurar_indices()

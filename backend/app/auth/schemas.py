@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 from app.usuarios.schemas import UsuarioPublico
@@ -30,6 +31,9 @@ class RegistroUsuarioEntrada(BaseModel):
     usuario: str = Field(min_length=3, max_length=30)
     correo: EmailStr
     password: str = Field(min_length=8, max_length=128)
+    cedula: str = Field(min_length=5, max_length=30)
+    fecha_nacimiento: datetime
+    acepta_terminos: bool
 
     @field_validator("usuario")
     @classmethod
@@ -40,6 +44,34 @@ class RegistroUsuarioEntrada(BaseModel):
     @classmethod
     def validar_password(cls, value: str) -> str:
         return validar_password_segura(value)
+
+    @field_validator("cedula")
+    @classmethod
+    def validar_cedula(cls, value: str) -> str:
+        value_clean = value.strip()
+        if not value_clean:
+            raise ValueError("La cedula no puede estar vacia.")
+        if not all(c.isdigit() or c == "-" for c in value_clean):
+            raise ValueError("La cedula solo puede contener numeros y guiones.")
+        return value_clean
+
+    @field_validator("fecha_nacimiento")
+    @classmethod
+    def validar_edad(cls, value: datetime) -> datetime:
+        hoy = date.today()
+        fecha_nac = value.date()
+        edad = hoy.year - fecha_nac.year - ((hoy.month, hoy.day) < (fecha_nac.month, fecha_nac.day))
+        if edad < 18:
+            raise ValueError("Debes ser mayor de edad (18 anos o mas) para registrarte.")
+        return value
+
+    @field_validator("acepta_terminos")
+    @classmethod
+    def validar_acepta_terminos(cls, value: bool) -> bool:
+        if not value:
+            raise ValueError("Debes aceptar los terminos y condiciones y declarar la mayoria de edad.")
+        return value
+
 
 
 class VerificarRegistroEntrada(BaseModel):
