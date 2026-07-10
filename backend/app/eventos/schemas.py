@@ -35,6 +35,18 @@ class PeleaResumen(BaseModel):
     peleador_azul: PeleadorEnPelea
 
 
+class PeleaCarteleraResumen(BaseModel):
+    id: int
+    evento_nombre: str
+    fecha: date
+    sede: str
+    estado_evento: str
+    division: str
+    orden: int
+    peleador_rojo_nombre: str
+    peleador_azul_nombre: str
+
+
 class EventoResumen(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

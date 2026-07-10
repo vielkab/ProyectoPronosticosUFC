@@ -58,13 +58,16 @@ class MmaApiClient:
         key = self.api_key.strip()
         return bool(key and key.lower() not in {"tu-api-sports-key", "api-sports-key", "changeme"})
 
-    def obtener_eventos(self) -> list[EventoExterno]:
+    def obtener_eventos(self, fecha: date | None = None) -> list[EventoExterno]:
         if not self.esta_configurado():
             return []
 
-        peleas = self._obtener_items(ajustes.mma_fights_endpoint, tolerar_error=True)
+        peleas = self._obtener_items(self._construir_path_peleas(fecha), tolerar_error=fecha is None)
         if peleas:
             return self._agrupar_peleas_como_eventos(peleas)
+
+        if fecha is not None:
+            return []
 
         eventos = self._obtener_items(ajustes.mma_events_endpoint, tolerar_error=True)
         return [evento for item in eventos if isinstance(item, dict) and (evento := self._mapear_evento(item))]
@@ -110,6 +113,14 @@ class MmaApiClient:
             return [f"{endpoint}?{urlencode({'category': categoria})}" for categoria in categorias[:limite]]
 
         return [endpoint]
+
+    def _construir_path_peleas(self, fecha: date | None = None) -> str:
+        endpoint = ajustes.mma_fights_endpoint
+        if fecha is None:
+            return endpoint
+
+        separador = "&" if "?" in endpoint else "?"
+        return f"{endpoint}{separador}{urlencode({'date': fecha.isoformat()})}"
 
     def _obtener_items(self, path: str, tolerar_error: bool = False) -> list[dict[str, Any]]:
         try:

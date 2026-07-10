@@ -20,24 +20,47 @@ depends_on = None
 def upgrade() -> None:
     op.create_table(
         "peleadores",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("nombre", sa.String(length=140), nullable=False),
-        sa.Column("division", sa.String(length=80), nullable=False),
-        sa.Column("pais", sa.String(length=80), nullable=False),
-        sa.Column("record", sa.String(length=40), nullable=False),
-        sa.Column("edad", sa.Integer(), nullable=True),
+
+        sa.Column("id", sa.Integer(), primary_key=True),
+
+        sa.Column("nombre", sa.String(140), nullable=False, unique=True),
+
         sa.Column("altura_cm", sa.Float(), nullable=True),
+
         sa.Column("alcance_cm", sa.Float(), nullable=True),
-        sa.Column("win_rate", sa.Float(), nullable=False),
-        sa.Column("ultimas_cinco", sa.String(length=5), nullable=False),
-        sa.Column("significant_strikes_pm", sa.Float(), nullable=False),
-        sa.Column("takedown_accuracy", sa.Float(), nullable=False),
-        sa.Column("takedown_defense", sa.Float(), nullable=False),
-        sa.Column("estadisticas", sa.JSON(), nullable=True),
-        sa.Column("fuente_externa_id", sa.String(length=80), nullable=True),
-        sa.Column("actualizado_en", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+
+        sa.Column("victorias", sa.Integer(), nullable=False),
+
+        sa.Column("derrotas", sa.Integer(), nullable=False),
+
+        sa.Column("empates", sa.Integer(), nullable=False),
+
+        sa.Column("striking_accuracy", sa.Float(), nullable=True),
+
+        sa.Column("striking_defense", sa.Float(), nullable=True),
+
+        sa.Column("wins_ko_tko", sa.Integer(), nullable=False),
+
+        sa.Column("wins_submission", sa.Integer(), nullable=False),
+
+        sa.Column("wins_decision", sa.Integer(), nullable=False),
+
+        sa.Column("wins_dq", sa.Integer(), nullable=False),
+
+        sa.Column("wins_round_1", sa.Integer(), nullable=False),
+
+        sa.Column("wins_round_2", sa.Integer(), nullable=False),
+
+        sa.Column("wins_round_3", sa.Integer(), nullable=False),
+
+        sa.Column("wins_round_4", sa.Integer(), nullable=False),
+
+        sa.Column("wins_round_5", sa.Integer(), nullable=False),
+
+        sa.Column("api_id", sa.Integer(), nullable=True, unique=True),
+
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("fuente_externa_id"),
+        sa.UniqueConstraint("api_id"),
         sa.UniqueConstraint("nombre"),
     )
     op.create_index(op.f("ix_peleadores_id"), "peleadores", ["id"], unique=False)

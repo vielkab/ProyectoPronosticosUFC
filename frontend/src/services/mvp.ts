@@ -18,6 +18,30 @@ export type PeleaResumen = {
   orden: number
 }
 
+export type PeleaCarteleraResumen = {
+  id: number
+  evento_nombre: string
+  fecha: string
+  sede: string
+  estado_evento: string
+  division: string
+  orden: number
+  peleador_rojo_nombre: string
+  peleador_azul_nombre: string
+}
+
+export type CrearPeleaCarteleraPayload = {
+  evento_nombre: string
+  fecha: string
+  sede?: string
+  estado_evento?: string
+  peleador_rojo_nombre: string
+  peleador_azul_nombre: string
+  division?: string
+  orden?: number
+  estado_pelea?: string
+}
+
 export type EventoDetalle = EventoResumen & {
   peleas: PeleaResumen[]
 }
@@ -100,6 +124,18 @@ export async function obtenerEvento(id: number): Promise<EventoDetalle> {
   return data
 }
 
+export async function listarPeleasCartelera(filtros?: { desde?: string; hasta?: string }): Promise<PeleaCarteleraResumen[]> {
+  const { data } = await api.get<PeleaCarteleraResumen[]>('/eventos/peleas/cartelera', {
+    params: filtros
+      ? {
+          ...(filtros.desde ? { desde: filtros.desde } : {}),
+          ...(filtros.hasta ? { hasta: filtros.hasta } : {}),
+        }
+      : undefined,
+  })
+  return data
+}
+
 export async function listarPeleadores(busqueda?: string, categoria = 'Lightweight'): Promise<PeleadorResumen[]> {
   const { data } = await api.get<PeleadorResumen[]>('/peleadores', {
     params: {
@@ -152,12 +188,23 @@ export async function crearCheckout(token: string, apuestaId: number): Promise<{
   return data
 }
 
-export async function obtenerResumenAdmin(): Promise<ResumenAdmin> {
-  const { data } = await api.get<ResumenAdmin>('/admin/resumen')
+export async function obtenerResumenAdmin(token: string): Promise<ResumenAdmin> {
+  const { data } = await api.get<ResumenAdmin>('/admin/resumen', {
+    headers: { Authorization: `Bearer ${token}` },
+  })
   return data
 }
 
-export async function sincronizarDatosAdmin(): Promise<SincronizacionRespuesta> {
-  const { data } = await api.post<SincronizacionRespuesta>('/admin/sincronizar')
+export async function sincronizarDatosAdmin(token: string): Promise<SincronizacionRespuesta> {
+  const { data } = await api.post<SincronizacionRespuesta>('/admin/sincronizar', undefined, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return data
+}
+
+export async function crearPeleaCartelera(token: string, payload: CrearPeleaCarteleraPayload): Promise<PeleaCarteleraResumen> {
+  const { data } = await api.post<PeleaCarteleraResumen>('/admin/cartelera/peleas', payload, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
   return data
 }
