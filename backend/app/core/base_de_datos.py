@@ -2,6 +2,8 @@ from collections.abc import Generator
 import logging
 from pathlib import Path
 
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
@@ -47,6 +49,12 @@ def configurar_engine(database_url: str) -> None:
     global engine
     engine = _crear_engine(database_url)
     SesionLocal.configure(bind=engine)
+
+
+def aplicar_migraciones() -> None:
+    configuracion = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+    configuracion.set_main_option("sqlalchemy.url", ajustes.database_url)
+    command.upgrade(configuracion, "head")
 
 
 configurar_engine(ajustes.database_url)

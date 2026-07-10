@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 
 from fastapi import HTTPException, status
 from sqlalchemy import func, select
@@ -12,7 +12,6 @@ from app.eventos.models import Evento, Pelea, Resultado
 from app.eventos.schemas import ResultadoEntrada
 from app.peleadores.models import Peleador
 from app.predicciones.models import Prediccion
-
 
 def _asegurar_datos_demo(db: Session) -> None:
     if db.scalar(select(func.count(Evento.id))) > 0:
@@ -71,6 +70,53 @@ def listar_eventos(db: Session) -> list[Evento]:
         sincronizar_eventos_mma(db)
 
     return list(db.scalars(select(Evento).order_by(Evento.fecha.asc())))
+
+
+def listar_peleas_cartelera(
+    db: Session,
+    desde: date | None = None,
+    hasta: date | None = None,
+) -> list[dict]:
+    if desde and hasta and desde > hasta:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La fecha inicial no puede ser mayor que la fecha final.",
+        )
+
+    fecha_minima = desde or datetime.now(UTC).date()
+    consulta = (
+        select(Pelea)
+        .join(Pelea.evento)
+        .options(
+            selectinload(Pelea.evento),
+            selectinload(Pelea.peleador_rojo),
+            selectinload(Pelea.peleador_azul),
+        )
+        .where(Evento.fecha >= fecha_minima)
+        .order_by(Evento.fecha.asc(), Pelea.orden.asc(), Pelea.id.asc())
+    )
+
+    if hasta:
+        consulta = consulta.where(Evento.fecha <= hasta)
+
+    if not desde and not hasta:
+        consulta = consulta.limit(20)
+
+    return [_mapear_pelea_cartelera(pelea) for pelea in db.scalars(consulta)]
+
+
+def _mapear_pelea_cartelera(pelea: Pelea) -> dict:
+    return {
+        "id": pelea.id,
+        "evento_nombre": pelea.evento.nombre,
+        "fecha": pelea.evento.fecha,
+        "sede": pelea.evento.sede,
+        "estado_evento": pelea.evento.estado,
+        "division": pelea.division,
+        "orden": pelea.orden,
+        "peleador_rojo_nombre": pelea.peleador_rojo.nombre,
+        "peleador_azul_nombre": pelea.peleador_azul.nombre,
+    }
 
 
 def sincronizar_eventos_mma(db: Session, cliente: MmaApiClient | None = None) -> dict[str, int | str]:
