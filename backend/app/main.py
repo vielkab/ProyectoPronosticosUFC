@@ -63,6 +63,7 @@ def crear_aplicacion() -> FastAPI:
             "database_url_es_defecto": "localhost:5432" in ajustes.database_url,
             "stripe_configurado": bool(ajustes.stripe_secret_key.strip()),
             "smtp_configurado": bool(ajustes.smtp_host.strip()),
+            "resend_configurado": bool(ajustes.resend_api_key.strip()),
             "guardar_codigos_desarrollo": ajustes.guardar_codigos_desarrollo,
             "base_datos_conexion": "Desconocido",
             "base_datos_error": None

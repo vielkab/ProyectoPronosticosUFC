@@ -48,6 +48,7 @@ class Ajustes(BaseSettings):
     smtp_password: str = Field("", alias="SMTP_PASSWORD")
     smtp_use_tls: bool = Field(True, alias="SMTP_USE_TLS")
     correo_remitente: str = Field("no-reply@pronostats.local", alias="CORREO_REMITENTE")
+    resend_api_key: str = Field("re_NaSuH7Rj_8ivqwXwuCoqLwyqv6ubrh9AH", alias="RESEND_API_KEY")
     guardar_codigos_desarrollo: bool = Field(True, alias="GUARDAR_CODIGOS_DESARROLLO")
     admin_usuario: str = Field("Dana White", alias="ADMIN_USUARIO")
     admin_correo: str = Field("vielkaborja@gmail.com", alias="ADMIN_CORREO")

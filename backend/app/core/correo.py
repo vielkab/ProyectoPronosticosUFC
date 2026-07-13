@@ -31,7 +31,39 @@ def _guardar_copia_desarrollo(correo_destino: str, asunto: str, contenido: str) 
 
 
 def _ejecutar_envio_correo_sincrono(correo_destino: str, asunto: str, contenido: str) -> None:
-    if ajustes.smtp_host.strip():
+    # 1. Si está configurado Resend API Key, preferirlo sobre SMTP
+    if ajustes.resend_api_key.strip():
+        import httpx
+        try:
+            api_key = ajustes.resend_api_key.strip()
+            # En Resend, si no tienes dominio verificado, debes enviar desde "onboarding@resend.dev"
+            remitente = "onboarding@resend.dev" if "pronostats.local" in ajustes.correo_remitente or "@" not in ajustes.correo_remitente else ajustes.correo_remitente
+            
+            response = httpx.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": remitente,
+                    "to": [correo_destino],
+                    "subject": asunto,
+                    "html": contenido.replace("\n", "<br>"),
+                },
+                timeout=10
+            )
+            if response.status_code in (200, 201, 202):
+                logger.info("Correo enviado exitosamente a %s a traves de Resend API", correo_destino)
+            else:
+                logger.error("Error de Resend API (%d): %s", response.status_code, response.text)
+                logger.warning("Respaldo del mensaje para %s:\n%s", correo_destino, contenido)
+        except Exception as e:
+            logger.error("Error al enviar correo via Resend API: %s", str(e))
+            logger.warning("Respaldo del mensaje para %s:\n%s", correo_destino, contenido)
+
+    # 2. Alternativa: SMTP tradicional
+    elif ajustes.smtp_host.strip():
         password_smtp = ajustes.smtp_password.replace(" ", "").strip()
         mensaje = EmailMessage()
         mensaje["Subject"] = asunto
