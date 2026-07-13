@@ -38,6 +38,7 @@ export type PeleaAdminResumen = {
   categoria: string
   estado: string
   fecha_hora: string | null
+  hora: string | null
   peleador_rojo_id: number
   peleador_azul_id: number
   peleador_rojo: PeleadorBasicoAdmin
@@ -52,6 +53,7 @@ export type CrearPeleaAdminPayload = {
   evento: string
   categoria: string
   fecha: string
+  hora?: string | null
   sede?: string
   peleador_rojo_id: number
   peleador_azul_id: number
@@ -208,6 +210,14 @@ export async function buscarPeleadoresAdmin(token: string, q: string): Promise<P
   return data
 }
 
+export async function listarPeleadoresPorDivision(token: string, division: string): Promise<PeleadorBusquedaAdmin[]> {
+  const { data } = await api.get<PeleadorBusquedaAdmin[]>('/admin/peleadores/por-division', {
+    headers: cabeceras(token),
+    params: { division },
+  })
+  return data
+}
+
 // ── Billetera admin ───────────────────────────────────────────────────────────
 
 export type TransaccionAdminResumen = {
@@ -229,5 +239,27 @@ export type ResumenBilletera = {
 
 export async function obtenerResumenBilletera(token: string): Promise<ResumenBilletera> {
   const { data } = await api.get<ResumenBilletera>('/admin/billetera/resumen', { headers: cabeceras(token) })
+  return data
+}
+
+// ── Predicciones admin ────────────────────────────────────────────────────────
+
+export type PrediccionAdminResumen = {
+  prediccion_id: number
+  pelea_id: number
+  evento: string
+  fecha: string | null
+  peleador_rojo: string
+  peleador_azul: string
+  probabilidad_rojo: number
+  probabilidad_azul: number
+  cuota_rojo: number | null
+  cuota_azul: number | null
+  acertada: boolean | null
+  explicacion: string
+}
+
+export async function listarPrediccionesAdmin(token: string): Promise<PrediccionAdminResumen[]> {
+  const { data } = await api.get<PrediccionAdminResumen[]>('/admin/predicciones', { headers: cabeceras(token) })
   return data
 }

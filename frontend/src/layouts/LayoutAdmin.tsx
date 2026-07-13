@@ -5,6 +5,7 @@ import { useAutenticacion } from '../hooks/useAutenticacion'
 const enlacesAdmin = [
   { to: '/admin', etiqueta: 'Resumen' },
   { to: '/admin/peleas', etiqueta: 'Peleas' },
+  { to: '/admin/predicciones', etiqueta: 'Pronósticos' },
   { to: '/admin/apuestas', etiqueta: 'Apuestas' },
   { to: '/admin/billetera', etiqueta: 'Billetera' },
   { to: '/admin/usuarios', etiqueta: 'Usuarios' },

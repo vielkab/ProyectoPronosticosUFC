@@ -84,6 +84,10 @@ export type PrediccionCombate = {
   peleador_azul_id: number
   probabilidad_rojo: number
   probabilidad_azul: number
+  cuota_rojo: number
+  cuota_azul: number
+  cuota_rojo_con_pronostico: number
+  cuota_azul_con_pronostico: number
   method: Record<string, OpcionMercado>
   round: Record<string, OpcionMercado>
   method_disponible: boolean
@@ -117,6 +121,7 @@ export type ApuestaResumen = {
   estado_pago: string
   monto: number
   cuota: number
+  ver_pronostico: boolean
   pelea_id: number
   peleador_seleccionado_id: number
   metodo_victoria: string | null
@@ -209,6 +214,7 @@ export async function registrarApuesta(
     monto: number
     metodo_victoria?: string | null
     round?: number | null
+    ver_pronostico?: boolean
   },
 ): Promise<ApuestaResumen> {
   const { data } = await api.post<ApuestaResumen>('/apuestas', payload, {

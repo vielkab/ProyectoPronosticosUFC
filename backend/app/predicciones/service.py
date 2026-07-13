@@ -5,22 +5,41 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.eventos.models import Pelea
-from app.eventos.service import _asegurar_datos_demo
 from app.peleadores.models import Peleador
 from app.predicciones.models import Prediccion
 from app.predicciones.schemas import FactorPrediccion, PrediccionCombate
-from ml.predictor import ModeloNoDisponible, predict
 
+# Margen de la casa para calcular cuotas (7%)
+_MARGEN_CASA = 0.07
+# Descuento por ver pronóstico (10%)
+DESCUENTO_VER_PRONOSTICO = 0.10
 
+# Pesos usando los campos reales del modelo Peleador actual
 PESOS_FACTORES = {
     "win_rate": 0.30,
-    "striking_accuracy": 0.18,
-    "striking_defense": 0.16,
-    "wins_ko_tko": 0.10,
-    "wins_submission": 0.08,
-    "alcance_cm": 0.10,
-    "experiencia": 0.08,
+    "ultimas_cinco": 0.20,
+    "significant_strikes_pm": 0.16,
+    "takedown_accuracy": 0.14,
+    "takedown_defense": 0.14,
+    "alcance_cm": 0.04,
+    "edad": 0.02,
 }
+
+
+def calcular_cuota(probabilidad: float) -> float:
+    """Convierte probabilidad (0-1) a cuota decimal con margen de casa."""
+    if probabilidad <= 0:
+        return 10.0  # cuota máxima si prob es 0
+    cuota_justa = 1.0 / probabilidad
+    return round(cuota_justa * (1 - _MARGEN_CASA), 2)
+
+
+def _racha_reciente(ultimas_cinco: str) -> float:
+    resultados = [c for c in ultimas_cinco.upper() if c in {"W", "L"}][:5]
+    if not resultados:
+        return 0.5
+    return resultados.count("W") / len(resultados)
+
 
 def _normalizar_par(valor_a: float, valor_b: float) -> tuple[float, float]:
     total = valor_a + valor_b
@@ -30,13 +49,14 @@ def _normalizar_par(valor_a: float, valor_b: float) -> tuple[float, float]:
 
 
 def _valor_factor(peleador: Peleador, nombre: str) -> float:
-    if nombre == "win_rate":
-        victorias = float(peleador.victorias or 0)
-        total = victorias + float(peleador.derrotas or 0) + float(peleador.empates or 0)
-        return victorias / total if total else 0.5
-    if nombre == "experiencia":
-        return float((peleador.victorias or 0) + (peleador.derrotas or 0) + (peleador.empates or 0))
-    valor = getattr(peleador, nombre, 0.0)
+    if nombre == "ultimas_cinco":
+        return _racha_reciente(peleador.ultimas_cinco or "")
+    if nombre == "edad":
+        if peleador.edad is None:
+            return 0.5
+        # Pico de rendimiento alrededor de 30 años
+        return max(0.0, 1 - abs(peleador.edad - 30) / 20)
+    valor = getattr(peleador, nombre, None)
     return float(valor or 0.0)
 
 
@@ -48,9 +68,9 @@ def _calcular_factores(rojo: Peleador, azul: Peleador) -> tuple[list[FactorPredi
     for nombre, peso in PESOS_FACTORES.items():
         valor_rojo = _valor_factor(rojo, nombre)
         valor_azul = _valor_factor(azul, nombre)
-        normalizado_rojo, normalizado_azul = _normalizar_par(valor_rojo, valor_azul)
-        puntaje_rojo += normalizado_rojo * peso
-        puntaje_azul += normalizado_azul * peso
+        norm_rojo, norm_azul = _normalizar_par(valor_rojo, valor_azul)
+        puntaje_rojo += norm_rojo * peso
+        puntaje_azul += norm_azul * peso
         factores.append(
             FactorPrediccion(
                 nombre=nombre,
@@ -65,7 +85,6 @@ def _calcular_factores(rojo: Peleador, azul: Peleador) -> tuple[list[FactorPredi
 
 
 def obtener_prediccion(db: Session, pelea_id: int) -> PrediccionCombate:
-    _asegurar_datos_demo(db)
     pelea = db.get(Pelea, pelea_id)
     if not pelea:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pelea no encontrada.")
@@ -75,57 +94,42 @@ def obtener_prediccion(db: Session, pelea_id: int) -> PrediccionCombate:
     if not rojo or not azul:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="La pelea no tiene peleadores validos para calcular prediccion.",
+            detail="La pelea no tiene peleadores válidos para calcular predicción.",
         )
 
-    factores, prob_rojo_heuristica, prob_azul_heuristica = _calcular_factores(rojo, azul)
-    try:
-        prediccion_modelo = predict(rojo, azul)
-        ganador_modelo = prediccion_modelo["winner"]
-        prob_rojo = ganador_modelo["fighter_a_probability"]
-        prob_azul = ganador_modelo["fighter_b_probability"]
-        metodos = prediccion_modelo.get("method", {})
-        rounds = prediccion_modelo.get("round", {})
-        origen = "modelo de Machine Learning"
-    except ModeloNoDisponible:
-        # La aplicación sigue operativa en instalaciones donde aún no se entrenó
-        # el modelo; nunca se presenta esta estimación como ML.
-        prob_rojo, prob_azul = prob_rojo_heuristica, prob_azul_heuristica
-        metodos, rounds = {}, {}
-        origen = "estimación estadística de respaldo"
-
-    total_probabilidades = prob_rojo + prob_azul
-    if total_probabilidades <= 0:
-        prob_rojo, prob_azul = prob_rojo_heuristica, prob_azul_heuristica
-        metodos, rounds = {}, {}
-        origen = "estimación estadística de respaldo"
-    else:
-        prob_rojo /= total_probabilidades
-        prob_azul /= total_probabilidades
+    factores, prob_rojo, prob_azul = _calcular_factores(rojo, azul)
     prob_rojo_pct = round(prob_rojo * 100, 2)
     prob_azul_pct = round(100 - prob_rojo_pct, 2)
+
+    # Calcular cuotas desde probabilidades
+    cuota_rojo = calcular_cuota(prob_rojo)
+    cuota_azul = calcular_cuota(prob_azul)
+    cuota_rojo_con_pronostico = round(cuota_rojo * (1 - DESCUENTO_VER_PRONOSTICO), 2)
+    cuota_azul_con_pronostico = round(cuota_azul * (1 - DESCUENTO_VER_PRONOSTICO), 2)
+
     favorito = rojo.nombre if prob_rojo_pct >= prob_azul_pct else azul.nombre
     explicacion = (
-        f"Predicción generada por {origen}. "
-        "Los factores muestran récord, striking, métodos de victoria, alcance y experiencia. "
-        f"El favorito estadistico es {favorito}."
+        "Predicción heurística basada en win rate, forma reciente, striking, "
+        f"derribos, defensa, alcance y edad. El favorito estadístico es {favorito}."
     )
-    if not metodos or not rounds:
-        explicacion += " El modelo de método y/o round no está disponible todavía."
 
     prediccion = db.scalar(select(Prediccion).where(Prediccion.pelea_id == pelea_id))
-    factores_json = [factor.model_dump() for factor in factores]
+    factores_json = [f.model_dump() for f in factores]
     if prediccion:
         prediccion.probabilidad_rojo = prob_rojo_pct
         prediccion.probabilidad_azul = prob_azul_pct
-        prediccion.factores = {"items": factores_json, "method": metodos, "round": rounds}
+        prediccion.cuota_rojo = cuota_rojo
+        prediccion.cuota_azul = cuota_azul
+        prediccion.factores = {"items": factores_json}
         prediccion.explicacion = explicacion
     else:
         prediccion = Prediccion(
             pelea_id=pelea_id,
             probabilidad_rojo=prob_rojo_pct,
             probabilidad_azul=prob_azul_pct,
-            factores={"items": factores_json, "method": metodos, "round": rounds},
+            cuota_rojo=cuota_rojo,
+            cuota_azul=cuota_azul,
+            factores={"items": factores_json},
             explicacion=explicacion,
         )
         db.add(prediccion)
@@ -138,10 +142,14 @@ def obtener_prediccion(db: Session, pelea_id: int) -> PrediccionCombate:
         peleador_azul_id=pelea.peleador_azul_id,
         probabilidad_rojo=prob_rojo_pct,
         probabilidad_azul=prob_azul_pct,
-        method=metodos,
-        round=rounds,
-        method_disponible=bool(metodos),
-        round_disponible=bool(rounds),
+        cuota_rojo=cuota_rojo,
+        cuota_azul=cuota_azul,
+        cuota_rojo_con_pronostico=cuota_rojo_con_pronostico,
+        cuota_azul_con_pronostico=cuota_azul_con_pronostico,
         factores=factores,
         explicacion=explicacion,
+        method={},
+        round={},
+        method_disponible=False,
+        round_disponible=False,
     )

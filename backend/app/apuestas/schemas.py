@@ -9,6 +9,7 @@ class ApuestaEntrada(BaseModel):
     monto: float = Field(gt=0)
     metodo_victoria: str | None = Field(default=None, max_length=60)
     round: int | None = Field(default=None, ge=1, le=5)
+    ver_pronostico: bool = Field(default=False)
 
 
 class ApuestaResumen(BaseModel):
@@ -19,6 +20,7 @@ class ApuestaResumen(BaseModel):
     estado_pago: str
     monto: float
     cuota: float
+    ver_pronostico: bool
     pelea_id: int
     peleador_seleccionado_id: int
     metodo_victoria: str | None = None

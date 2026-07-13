@@ -6,6 +6,7 @@ import { AdminApuestasPagina } from '../pages/AdminApuestasPagina'
 import { AdminBilleteraPagina } from '../pages/AdminBilleteraPagina'
 import { AdminPagina } from '../pages/AdminPagina'
 import { AdminPeleasPagina } from '../pages/AdminPeleasPagina'
+import { AdminPrediccionesPagina } from '../pages/AdminPrediccionesPagina'
 import { AdminUsuariosPagina } from '../pages/AdminUsuariosPagina'
 import { BilleteraPagina } from '../pages/BilleteraPagina'
 import { EventosPagina } from '../pages/EventosPagina'
@@ -65,6 +66,7 @@ export const proveedorRutas = createBrowserRouter([
         children: [
           { index: true, element: <AdminPagina /> },
           { path: 'peleas', element: <AdminPeleasPagina /> },
+          { path: 'predicciones', element: <AdminPrediccionesPagina /> },
           { path: 'apuestas', element: <AdminApuestasPagina /> },
           { path: 'billetera', element: <AdminBilleteraPagina /> },
           { path: 'usuarios', element: <AdminUsuariosPagina /> },
