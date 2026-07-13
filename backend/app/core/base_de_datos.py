@@ -60,9 +60,13 @@ def aplicar_migraciones() -> None:
         return
     os.environ["_MIGRACIONES_APLICADAS"] = "1"
 
-    configuracion = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
-    configuracion.set_main_option("sqlalchemy.url", ajustes.database_url)
-    command.upgrade(configuracion, "head")
+    try:
+        configuracion = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
+        configuracion.set_main_option("sqlalchemy.url", ajustes.database_url)
+        command.upgrade(configuracion, "head")
+        logger.info("Migraciones aplicadas exitosamente.")
+    except Exception as e:
+        logger.error("No se pudieron aplicar las migraciones en el arranque: %s", str(e))
 
 
 configurar_engine(ajustes.database_url)

@@ -41,6 +41,32 @@ def crear_aplicacion() -> FastAPI:
     def obtener_salud() -> dict[str, str]:
         return {"estado": "ok"}
 
+    @aplicacion.get("/debug-status", tags=["salud"])
+    def obtener_estado_debug() -> dict:
+        from sqlalchemy import text
+        from app.core.base_de_datos import engine
+        
+        estado = {
+            "app_env": ajustes.app_env,
+            "database_url_configurada": bool(ajustes.database_url),
+            "database_url_es_defecto": "localhost:5432" in ajustes.database_url,
+            "stripe_configurado": bool(ajustes.stripe_secret_key.strip()),
+            "smtp_configurado": bool(ajustes.smtp_host.strip()),
+            "guardar_codigos_desarrollo": ajustes.guardar_codigos_desarrollo,
+            "base_datos_conexion": "Desconocido",
+            "base_datos_error": None
+        }
+        
+        try:
+            with engine.connect() as conexion:
+                conexion.execute(text("SELECT 1"))
+            estado["base_datos_conexion"] = "Conexión exitosa"
+        except Exception as e:
+            estado["base_datos_conexion"] = "Fallo de conexión"
+            estado["base_datos_error"] = str(e)
+            
+        return estado
+
     aplicacion.include_router(api_router)
     return aplicacion
 
