@@ -35,7 +35,7 @@ export function InicioPagina() {
 
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <TarjetaResumen
-          titulo="Explora sin cuenta"
+          titulo="Explora con cuenta"
           descripcion="La parte principal del producto es pública para que el usuario conozca la plataforma antes de registrarse."
           contenido={
             <div className="flex flex-wrap gap-3">
