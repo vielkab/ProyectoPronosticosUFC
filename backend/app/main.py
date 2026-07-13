@@ -20,7 +20,7 @@ def crear_aplicacion() -> FastAPI:
     if ajustes.app_env == "desarrollo":
         allow_origins = ["*"]
     else:
-        allow_origins = [ajustes.frontend_url]
+        allow_origins = ajustes.frontend_origenes_permitidos
 
     aplicacion.add_middleware(
         CORSMiddleware,

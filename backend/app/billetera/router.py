@@ -91,8 +91,8 @@ def recargar_creditos(
                     "quantity": 1,
                 }
             ],
-            success_url=f"{ajustes.frontend_url}/billetera?stripe=success&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{ajustes.frontend_url}/billetera?stripe=cancel",
+            success_url=f"{ajustes.frontend_url_base}/billetera?stripe=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{ajustes.frontend_url_base}/billetera?stripe=cancel",
             metadata={
                 "tipo": "recarga",
                 "usuario_id": str(usuario_actual.id),

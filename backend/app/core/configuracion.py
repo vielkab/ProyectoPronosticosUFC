@@ -55,12 +55,31 @@ class Ajustes(BaseSettings):
 
     @property
     def frontend_origenes_permitidos(self) -> list[str]:
+        from urllib.parse import urlparse
+
         origenes = [origen.strip() for origen in self.frontend_urls.split(",") if origen.strip()]
 
         if self.frontend_url.strip():
             origenes.append(self.frontend_url.strip())
 
-        return list(dict.fromkeys(origenes))
+        origenes_limpios = []
+        for origen in origenes:
+            partes = urlparse(origen)
+            if partes.scheme and partes.netloc:
+                origenes_limpios.append(f"{partes.scheme}://{partes.netloc}")
+            else:
+                origenes_limpios.append(origen)
+
+        return list(dict.fromkeys(origenes_limpios))
+
+
+    @property
+    def frontend_url_base(self) -> str:
+        from urllib.parse import urlparse
+        partes = urlparse(self.frontend_url)
+        if partes.scheme and partes.netloc:
+            return f"{partes.scheme}://{partes.netloc}"
+        return self.frontend_url
 
 
 ajustes = Ajustes()

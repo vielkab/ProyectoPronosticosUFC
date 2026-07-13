@@ -34,14 +34,20 @@ def enviar_correo(correo_destino: str, asunto: str, contenido: str) -> None:
         mensaje["To"] = correo_destino
         mensaje.set_content(contenido)
 
-        with smtplib.SMTP(ajustes.smtp_host, ajustes.smtp_port, timeout=10) as servidor:
-            if ajustes.smtp_use_tls:
-                servidor.starttls()
+        try:
+            with smtplib.SMTP(ajustes.smtp_host, ajustes.smtp_port, timeout=10) as servidor:
+                if ajustes.smtp_use_tls:
+                    servidor.starttls()
 
-            if ajustes.smtp_user.strip():
-                servidor.login(ajustes.smtp_user.strip(), password_smtp)
+                if ajustes.smtp_user.strip():
+                    servidor.login(ajustes.smtp_user.strip(), password_smtp)
 
-            servidor.send_message(mensaje)
+                servidor.send_message(mensaje)
+            logger.info("Correo enviado exitosamente a %s", correo_destino)
+        except Exception as e:
+            logger.error("Error al enviar correo via SMTP: %s", str(e))
+            # Imprimir en logs como respaldo para que en produccion se pueda verificar el codigo si el SMTP falla
+            logger.warning("Respaldo del mensaje para %s:\n%s", correo_destino, contenido)
     else:
         logger.warning(
             "SMTP no configurado. El correo para %s se guardara en archivos de desarrollo.",
