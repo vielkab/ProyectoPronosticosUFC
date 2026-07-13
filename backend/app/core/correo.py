@@ -72,15 +72,21 @@ def _ejecutar_envio_correo_sincrono(correo_destino: str, asunto: str, contenido:
         mensaje.set_content(contenido)
 
         try:
-            with smtplib.SMTP(ajustes.smtp_host, ajustes.smtp_port, timeout=10) as servidor:
-                if ajustes.smtp_use_tls:
+            # Si el puerto es 465, usamos una conexión segura SSL directa
+            if ajustes.smtp_port == 465:
+                servidor_context = smtplib.SMTP_SSL(ajustes.smtp_host, ajustes.smtp_port, timeout=10)
+            else:
+                servidor_context = smtplib.SMTP(ajustes.smtp_host, ajustes.smtp_port, timeout=10)
+
+            with servidor_context as servidor:
+                if ajustes.smtp_port != 465 and ajustes.smtp_use_tls:
                     servidor.starttls()
 
                 if ajustes.smtp_user.strip():
                     servidor.login(ajustes.smtp_user.strip(), password_smtp)
 
                 servidor.send_message(mensaje)
-            logger.info("Correo enviado exitosamente a %s", correo_destino)
+            logger.info("Correo enviado exitosamente a %s via SMTP", correo_destino)
         except Exception as e:
             logger.error("Error al enviar correo via SMTP: %s", str(e))
             # Imprimir en logs como respaldo para que en produccion se pueda verificar el codigo si el SMTP falla
