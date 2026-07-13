@@ -14,14 +14,20 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-config.set_main_option("sqlalchemy.url", ajustes.database_url)
+# Usamos la URL que ya esté en la configuración (por ejemplo, si se cambió dinámicamente a SQLite),
+# de lo contrario, usamos la de ajustes.
+url = config.get_main_option("sqlalchemy.url")
+if not url:
+    url = ajustes.database_url
+    config.set_main_option("sqlalchemy.url", url)
 
 target_metadata = Base.metadata
 
 
 def ejecutar_migraciones_offline() -> None:
+    url_actual = config.get_main_option("sqlalchemy.url") or url
     context.configure(
-        url=ajustes.database_url,
+        url=url_actual,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -33,7 +39,8 @@ def ejecutar_migraciones_offline() -> None:
 
 def ejecutar_migraciones_online() -> None:
     configuracion = config.get_section(config.config_ini_section, {})
-    configuracion["sqlalchemy.url"] = ajustes.database_url
+    url_actual = config.get_main_option("sqlalchemy.url") or url
+    configuracion["sqlalchemy.url"] = url_actual
 
     engine = engine_from_config(
         configuracion,

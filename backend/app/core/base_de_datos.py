@@ -60,8 +60,34 @@ def aplicar_migraciones() -> None:
         return
     os.environ["_MIGRACIONES_APLICADAS"] = "1"
 
+    db_url = ajustes.database_url
+
+    # Probar conexión antes de aplicar migraciones para evitar bloqueos largos
+    if db_url.startswith("postgresql"):
+        try:
+            from sqlalchemy import create_engine
+            # Creamos un engine temporal con un timeout corto de 3 segundos
+            temp_engine = create_engine(db_url, connect_args={"connect_timeout": 3})
+            with temp_engine.connect() as conexion:
+                conexion.execute(text("SELECT 1"))
+        except Exception as e:
+            puede_hacer_fallback = (
+                ajustes.app_env == "desarrollo"
+                and ajustes.sqlite_fallback_habilitado
+            )
+            if puede_hacer_fallback:
+                db_url = _construir_url_sqlite_fallback()
+                logger.warning(
+                    "No se pudo conectar a PostgreSQL para aplicar migraciones. Se usará SQLite temporalmente en %s: %s",
+                    db_url,
+                    str(e),
+                )
+                configurar_engine(db_url)
+            else:
+                raise
+
     configuracion = Config(str(Path(__file__).resolve().parents[2] / "alembic.ini"))
-    configuracion.set_main_option("sqlalchemy.url", ajustes.database_url)
+    configuracion.set_main_option("sqlalchemy.url", db_url)
     command.upgrade(configuracion, "head")
 
 

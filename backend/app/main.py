@@ -16,11 +16,9 @@ def crear_aplicacion() -> FastAPI:
         debug=ajustes.app_debug,
     )
 
-    # En desarrollo permitir orígenes flexibles para evitar errores CORS
-    if ajustes.app_env == "desarrollo":
-        allow_origins = ["*"]
-    else:
-        allow_origins = [ajustes.frontend_url]
+    # Permitir los orígenes configurados del frontend para evitar errores CORS
+    allow_origins = ajustes.frontend_origenes_permitidos
+
 
     aplicacion.add_middleware(
         CORSMiddleware,
