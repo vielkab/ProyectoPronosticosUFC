@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { TarjetaResumen } from '../components/ui/TarjetaResumen'
@@ -62,14 +62,14 @@ export function PrediccionesPagina() {
     cargar()
   }, [])
 
-  function cuotaParaPeleador(prediccion: PrediccionCombate, peleaId: number, peleadorId: number, pelea: PeleaCarteleraResumen): number {
-    const verPronostico = formularios[peleaId]?.verPronostico ?? false
-    const esRojo = peleadorId === -1 ? true : peleadorId === pelea.id // placeholder
-    if (verPronostico) {
-      return peleadorId === -1 ? 0 : (prediccion.cuota_rojo_con_pronostico)
-    }
-    return peleadorId === -1 ? 0 : prediccion.cuota_rojo
-  }
+  // function cuotaParaPeleador(prediccion: PrediccionCombate, peleaId: number, peleadorId: number, pelea: PeleaCarteleraResumen): number {
+  //   const verPronostico = formularios[peleaId]?.verPronostico ?? false
+  //   const esRojo = peleadorId === -1 ? true : peleadorId === pelea.id // placeholder
+  //   if (verPronostico) {
+  //     return peleadorId === -1 ? 0 : (prediccion.cuota_rojo_con_pronostico)
+  //   }
+  //   return peleadorId === -1 ? 0 : prediccion.cuota_rojo
+  // }
 
   function getCuota(pelea: PeleaCarteleraResumen, peleadorSeleccionadoId: number, verPronostico: boolean): number {
     const pred = predicciones[pelea.id]
@@ -87,7 +87,7 @@ export function PrediccionesPagina() {
       return
     }
     const form = formularios[pelea.id]
-    const pred = predicciones[pelea.id]
+    // const pred = predicciones[pelea.id]
     if (!form || form.peleadorId === -1) {
       setErrores(prev => ({ ...prev, [pelea.id]: 'Selecciona un peleador.' }))
       return
