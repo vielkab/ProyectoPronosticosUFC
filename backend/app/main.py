@@ -32,10 +32,21 @@ def crear_aplicacion() -> FastAPI:
 
     @aplicacion.on_event("startup")
     def al_iniciar_aplicacion() -> None:
-        load_historical_datasets()
-        aplicar_migraciones()
-        inicializar_base_de_datos()
-        asegurar_admin_inicial()
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            load_historical_datasets()
+        except Exception as e:
+            logger.error("Error al cargar datasets historicos: %s", str(e), exc_info=True)
+
+        try:
+            aplicar_migraciones()
+            inicializar_base_de_datos()
+            asegurar_admin_inicial()
+            logger.info("Base de datos inicializada correctamente en el arranque.")
+        except Exception as e:
+            logger.error("Error critico durante la inicializacion de la base de datos en el arranque: %s", str(e), exc_info=True)
 
     @aplicacion.get("/salud", tags=["salud"])
     def obtener_salud() -> dict[str, str]:
