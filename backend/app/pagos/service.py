@@ -4,7 +4,7 @@ from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 # Importamos la configuración local para detectar el entorno
-from app.core import configuracion 
+from app.core.configuracion import ajustes
 
 # (Aquí se mantienen las importaciones de tus esquemas o modelos si las tienen arriba)
 # from app.pagos.schemas import ... 
@@ -15,7 +15,7 @@ async def procesar_webhook_stripe(db: Session, request: Request) -> str:
 
     # 🌟 BYPASS PARA DESARROLLO LOCAL
     # Intercepta el JSON simulado antes de que pase por la validación estricta de Stripe
-    if configuracion.settings.APP_ENV == "desarrollo":
+    if ajustes.app_env == "desarrollo":
         evento = json.loads(payload)
         tipo = evento["type"]
         objeto = evento["data"]["object"]

@@ -1,10 +1,12 @@
+from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+_ruta_env = Path(__file__).resolve().parents[2] / ".env"
 
 class Ajustes(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ruta_env),
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -48,6 +50,7 @@ class Ajustes(BaseSettings):
     smtp_password: str = Field("", alias="SMTP_PASSWORD")
     smtp_use_tls: bool = Field(True, alias="SMTP_USE_TLS")
     correo_remitente: str = Field("no-reply@pronostats.local", alias="CORREO_REMITENTE")
+    resend_api_key: str = Field("", alias="RESEND_API_KEY")
     guardar_codigos_desarrollo: bool = Field(True, alias="GUARDAR_CODIGOS_DESARROLLO")
     admin_usuario: str = Field("Dana White", alias="ADMIN_USUARIO")
     admin_correo: str = Field("vielkaborja@gmail.com", alias="ADMIN_CORREO")
@@ -55,12 +58,31 @@ class Ajustes(BaseSettings):
 
     @property
     def frontend_origenes_permitidos(self) -> list[str]:
+        from urllib.parse import urlparse
+
         origenes = [origen.strip() for origen in self.frontend_urls.split(",") if origen.strip()]
 
         if self.frontend_url.strip():
             origenes.append(self.frontend_url.strip())
 
-        return list(dict.fromkeys(origenes))
+        origenes_limpios = []
+        for origen in origenes:
+            partes = urlparse(origen)
+            if partes.scheme and partes.netloc:
+                origenes_limpios.append(f"{partes.scheme}://{partes.netloc}")
+            else:
+                origenes_limpios.append(origen)
+
+        return list(dict.fromkeys(origenes_limpios))
+
+
+    @property
+    def frontend_url_base(self) -> str:
+        from urllib.parse import urlparse
+        partes = urlparse(self.frontend_url)
+        if partes.scheme and partes.netloc:
+            return f"{partes.scheme}://{partes.netloc}"
+        return self.frontend_url
 
 
 ajustes = Ajustes()

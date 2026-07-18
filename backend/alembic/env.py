@@ -14,12 +14,15 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Usamos la URL que ya esté en la configuración (por ejemplo, si se cambió dinámicamente a SQLite),
-# de lo contrario, usamos la de ajustes.
-url = config.get_main_option("sqlalchemy.url")
+# 1. Intentamos leer PRIMERO el .env de la máquina actual
+url = ajustes.database_url
+
+# 2. Si por alguna razón el .env está vacío, usamos el del alembic.ini como respaldo
 if not url:
-    url = ajustes.database_url
-    config.set_main_option("sqlalchemy.url", url)
+    url = config.get_main_option("sqlalchemy.url")
+
+# 3. Le asignamos la URL final a Alembic
+config.set_main_option("sqlalchemy.url", url)
 
 target_metadata = Base.metadata
 

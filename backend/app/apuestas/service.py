@@ -9,7 +9,7 @@ from app.apuestas.schemas import ApuestaEntrada
 from app.billetera.models import Billetera
 from app.eventos.models import Pelea
 from app.predicciones.models import Prediccion
-from app.predicciones.service import calcular_cuota, DESCUENTO_VER_PRONOSTICO
+from app.predicciones.service import DESCUENTO_VER_PRONOSTICO
 from app.usuarios.models import Usuario
 
 

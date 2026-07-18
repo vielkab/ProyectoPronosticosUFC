@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from pydantic import BaseModel, EmailStr, Field, field_validator
+from email_validator import validate_email, EmailNotValidError
 
 from app.usuarios.schemas import UsuarioPublico
 
@@ -13,6 +14,18 @@ def normalizar_usuario(usuario: str) -> str:
     if not all(caracter.isalnum() or caracter in "._- " for caracter in usuario_limpio):
         raise ValueError("El usuario solo puede incluir letras, numeros, espacios, puntos, guiones o guion bajo.")
     return usuario_limpio
+
+
+def normalizar_usuario_o_correo(identificador: str) -> str:
+    identificador_limpio = identificador.strip()
+    if "@" in identificador_limpio:
+        try:
+            info = validate_email(identificador_limpio, check_deliverability=False)
+            return info.normalized
+        except EmailNotValidError as e:
+            raise ValueError(f"El correo ingresado no es valido: {str(e)}")
+    else:
+        return normalizar_usuario(identificador_limpio)
 
 
 def validar_password_segura(password: str) -> str:
@@ -80,13 +93,13 @@ class VerificarRegistroEntrada(BaseModel):
 
 
 class LoginEntrada(BaseModel):
-    usuario: str = Field(min_length=3, max_length=30)
+    usuario: str = Field(min_length=3, max_length=255)
     password: str = Field(min_length=8, max_length=128)
 
     @field_validator("usuario")
     @classmethod
     def validar_usuario(cls, value: str) -> str:
-        return normalizar_usuario(value)
+        return normalizar_usuario_o_correo(value)
 
 
 class RefreshEntrada(BaseModel):
@@ -94,33 +107,33 @@ class RefreshEntrada(BaseModel):
 
 
 class SolicitudRecuperacionEntrada(BaseModel):
-    usuario: str = Field(min_length=3, max_length=30)
+    usuario: str = Field(min_length=3, max_length=255)
 
     @field_validator("usuario")
     @classmethod
     def validar_usuario(cls, value: str) -> str:
-        return normalizar_usuario(value)
+        return normalizar_usuario_o_correo(value)
 
 
 class VerificarRecuperacionEntrada(BaseModel):
-    usuario: str = Field(min_length=3, max_length=30)
+    usuario: str = Field(min_length=3, max_length=255)
     codigo: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
 
     @field_validator("usuario")
     @classmethod
     def validar_usuario(cls, value: str) -> str:
-        return normalizar_usuario(value)
+        return normalizar_usuario_o_correo(value)
 
 
 class RestablecerPasswordEntrada(BaseModel):
-    usuario: str = Field(min_length=3, max_length=30)
+    usuario: str = Field(min_length=3, max_length=255)
     codigo: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
     password: str = Field(min_length=8, max_length=128)
 
     @field_validator("usuario")
     @classmethod
     def validar_usuario(cls, value: str) -> str:
-        return normalizar_usuario(value)
+        return normalizar_usuario_o_correo(value)
 
     @field_validator("password")
     @classmethod

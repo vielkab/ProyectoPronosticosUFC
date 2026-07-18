@@ -329,7 +329,11 @@ def iniciar_sesion_usuario(
     usuario_ingresado = payload.usuario.strip()
     _verificar_limite_login(request, usuario_ingresado)
 
-    usuario = _buscar_usuario_por_nombre(db, usuario_ingresado)
+    usuario = db.scalar(
+        select(Usuario).where(
+            (Usuario.nombre == usuario_ingresado) | (Usuario.correo == usuario_ingresado.lower())
+        )
+    )
 
     if not usuario or not verificar_password(payload.password, usuario.password_hash):
         _registrar_intento_fallido(request, usuario_ingresado)
@@ -383,7 +387,7 @@ def refrescar_tokens_usuario(db: Session, refresh_token: str) -> TokensRespuesta
 def solicitar_recuperacion_password(db: Session, usuario: str) -> MensajeAuth:
     usuario_existente = db.scalar(
         select(Usuario).where(
-            Usuario.nombre == usuario.strip(),
+            (Usuario.nombre == usuario.strip()) | (Usuario.correo == usuario.strip().lower()),
             Usuario.activo.is_(True),
         )
     )
@@ -408,7 +412,11 @@ def validar_codigo_recuperacion(
     db: Session,
     payload: VerificarRecuperacionEntrada,
 ) -> MensajeAuth:
-    usuario = _buscar_usuario_por_nombre(db, payload.usuario)
+    usuario = db.scalar(
+        select(Usuario).where(
+            (Usuario.nombre == payload.usuario.strip()) | (Usuario.correo == payload.usuario.strip().lower())
+        )
+    )
     if not usuario or not usuario.activo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -426,7 +434,11 @@ def validar_codigo_recuperacion(
 
 
 def restablecer_password(db: Session, payload: RestablecerPasswordEntrada) -> MensajeAuth:
-    usuario = _buscar_usuario_por_nombre(db, payload.usuario)
+    usuario = db.scalar(
+        select(Usuario).where(
+            (Usuario.nombre == payload.usuario.strip()) | (Usuario.correo == payload.usuario.strip().lower())
+        )
+    )
     if not usuario or not usuario.activo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
