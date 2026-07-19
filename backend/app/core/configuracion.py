@@ -55,6 +55,7 @@ class Ajustes(BaseSettings):
     admin_usuario: str = Field("Dana White", alias="ADMIN_USUARIO")
     admin_correo: str = Field("vielkaborja@gmail.com", alias="ADMIN_CORREO")
     admin_password: str = Field("Elmeromero1", alias="ADMIN_PASSWORD")
+    limite_diario_recarga: float = Field(5000.0, alias="LIMITE_DIARIO_RECARGA")
 
     @property
     def frontend_origenes_permitidos(self) -> list[str]:

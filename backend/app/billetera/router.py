@@ -1,6 +1,7 @@
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, func
 import stripe
 
 from app.auth.dependencias import obtener_usuario_actual
@@ -64,6 +65,27 @@ def recargar_creditos(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El monto de la recarga debe ser mayor a cero.",
+        )
+
+    # Validar el límite diario de recarga (5000 créditos por día / 24 horas)
+    limite_tiempo = datetime.now(timezone.utc) - timedelta(days=1)
+    total_recar_24h = db.scalar(
+        select(func.coalesce(func.sum(Recarga.monto), 0.0))
+        .where(
+            Recarga.usuario_id == usuario_actual.id,
+            Recarga.estado == "completado",
+            Recarga.creado_en >= limite_tiempo,
+        )
+    )
+
+    if total_recar_24h + payload.monto > ajustes.limite_diario_recarga:
+        cupo_disponible = max(0.0, ajustes.limite_diario_recarga - total_recar_24h)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                f"Has excedido el limite diario de recargas. El limite maximo es de {int(ajustes.limite_diario_recarga)} creditos por dia (24 horas). "
+                f"Has recargado {total_recar_24h:.2f} creditos en las ultimas 24 horas. Cupo disponible: {cupo_disponible:.2f} creditos."
+            ),
         )
 
     if not ajustes.stripe_secret_key.strip():
@@ -179,7 +201,8 @@ def confirmar_recarga(
     db.add(nueva_recarga)
     db.flush()
 
-    # 6. Limpieza automática del historial: mantener solo las últimas 5 recargas para ahorrar recursos
+    # 6. Limpieza automática del historial: mantener las últimas 5 recargas para ahorrar recursos,
+    # pero nunca eliminar recargas de las últimas 24 horas para poder validar el límite diario.
     limite = 5
     ids_recientes_query = (
         select(Recarga.id)
@@ -189,10 +212,12 @@ def confirmar_recarga(
     )
     ids_recientes = db.scalars(ids_recientes_query).all()
     if ids_recientes:
+        limite_tiempo = datetime.now(timezone.utc) - timedelta(days=1)
         db.execute(
             delete(Recarga)
             .where(Recarga.usuario_id == usuario_actual.id)
             .where(Recarga.id.not_in(ids_recientes))
+            .where(Recarga.creado_en < limite_tiempo)
         )
 
     db.commit()
