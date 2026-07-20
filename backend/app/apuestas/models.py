@@ -33,3 +33,15 @@ class Apuesta(Base):
     usuario = relationship("Usuario")
     pelea = relationship("Pelea")
     peleador_seleccionado = relationship("Peleador")
+
+    @property
+    def porcentaje_retiro(self) -> float | None:
+        """Porcentaje a devolver mientras la apuesta siga disponible para retiro."""
+        if self.estado != "Pendiente":
+            return None
+        return 0.70 if self.pelea.estado == "en_curso" else 0.90
+
+    @property
+    def monto_reembolso(self) -> float | None:
+        porcentaje = self.porcentaje_retiro
+        return round(self.monto * porcentaje, 2) if porcentaje is not None else None

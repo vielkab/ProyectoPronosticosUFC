@@ -93,6 +93,7 @@ def listar_peleas_cartelera(
             selectinload(Pelea.peleador_azul),
         )
         .where(Evento.fecha >= fecha_minima)
+        .where(Pelea.estado.in_({"programada", "en_curso"}))
         .order_by(Evento.fecha.asc(), Pelea.orden.asc(), Pelea.id.asc())
     )
 

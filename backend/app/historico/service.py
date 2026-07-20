@@ -1,5 +1,8 @@
 from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
 
+from app.eventos.models import Pelea, Resultado
 from app.historico import loader
 from app.historico.schemas import PaginaPeleasHistoricas, PeleaHistorica, RankingHistorico
 
@@ -12,22 +15,47 @@ def _verificar_datasets_cargados() -> None:
         )
 
 
-def get_recent_fights(page: int, size: int) -> PaginaPeleasHistoricas:
-    _verificar_datasets_cargados()
-    fights = loader.historical_fights.sort_values("Event_Date", ascending=False, kind="stable")
-    total = len(fights)
-    inicio = (page - 1) * size
-    filas = fights.iloc[inicio : inicio + size]
+def get_recent_fights(db: Session, page: int, size: int) -> PaginaPeleasHistoricas:
+    peleas_con_resultado = db.scalars(
+        select(Pelea)
+        .join(Pelea.resultado)
+        .options(
+            selectinload(Pelea.evento),
+            selectinload(Pelea.peleador_rojo),
+            selectinload(Pelea.peleador_azul),
+            selectinload(Pelea.resultado).selectinload(Resultado.ganador),
+        )
+    ).all()
+
     items = [
         PeleaHistorica(
-            fecha=fila.Event_Date.strftime("%Y-%m-%d"),
-            peleador_1=str(fila.Fighter_1),
-            peleador_2=str(fila.Fighter_2),
-            ganador=str(fila.Winner),
+            fecha=pelea.evento.fecha.isoformat(),
+            peleador_1=pelea.peleador_rojo.nombre,
+            peleador_2=pelea.peleador_azul.nombre,
+            ganador=pelea.resultado.ganador.nombre,
         )
-        for fila in filas.itertuples(index=False)
+        for pelea in peleas_con_resultado
+        if pelea.resultado and pelea.resultado.ganador
     ]
-    return PaginaPeleasHistoricas(page=page, size=size, total=total, items=items)
+
+    if not loader.historical_fights.empty:
+        items.extend(
+            PeleaHistorica(
+                fecha=fila.Event_Date.strftime("%Y-%m-%d"),
+                peleador_1=str(fila.Fighter_1),
+                peleador_2=str(fila.Fighter_2),
+                ganador=str(fila.Winner),
+            )
+            for fila in loader.historical_fights.itertuples(index=False)
+        )
+
+    if not items:
+        _verificar_datasets_cargados()
+
+    items.sort(key=lambda pelea: pelea.fecha, reverse=True)
+    total = len(items)
+    inicio = (page - 1) * size
+    return PaginaPeleasHistoricas(page=page, size=size, total=total, items=items[inicio : inicio + size])
 
 
 def get_rankings(division: str) -> list[RankingHistorico]:

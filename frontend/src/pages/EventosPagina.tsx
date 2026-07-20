@@ -28,7 +28,7 @@ export function EventosPagina() {
     <div className="flex w-full flex-col gap-6">
       <header>
         <h2 className="m-0 text-3xl font-black text-white">Carteleras UFC</h2>
-        <p className="mt-3 max-w-2xl text-slate-300">Peleas próximas y rangos de cartelera cargados desde la base de datos.</p>
+        <p className="mt-3 max-w-2xl text-slate-300">Solo se muestran peleas programadas o en curso. Las peleas con resultado están disponibles en el histórico.</p>
       </header>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
