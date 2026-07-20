@@ -1,14 +1,15 @@
 from __future__ import annotations
-
 from datetime import datetime
-
 from sqlalchemy import Boolean, DateTime, JSON, String, func
 from sqlalchemy.orm import Mapped, mapped_column
-
 from app.core.base import Base
 
-
 class CodigoAutenticacion(Base):
+    """
+    Tabla conservada para compatibilidad y auditoría histórica.
+    Clerk gestiona los flujos activos de OTP, pero esta estructura permanece 
+    disponible para futuros flujos de verificación internos de PronoStats.
+    """
     __tablename__ = "codigos_autenticacion"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)

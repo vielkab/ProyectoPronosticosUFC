@@ -19,10 +19,10 @@ import { PeleadoresPagina } from '../pages/PeleadoresPagina'
 import { PerfilPagina } from '../pages/PerfilPagina'
 import { PrediccionesPagina } from '../pages/PrediccionesPagina'
 import { RankingsPagina } from '../pages/RankingsPagina'
-import { RecuperarPasswordCambioPagina } from '../pages/RecuperarPasswordCambioPagina'
-import { RecuperarPasswordCodigoPagina } from '../pages/RecuperarPasswordCodigoPagina'
 import { RegistroPagina } from '../pages/RegistroPagina'
 import { VerificarRegistroPagina } from '../pages/VerificarRegistroPagina'
+import { RecuperarPasswordCodigoPagina } from '../pages/RecuperarPasswordCodigoPagina'
+import { RecuperarPasswordCambioPagina } from '../pages/RecuperarPasswordCambioPagina'
 import { RutaAdmin } from './RutaAdmin'
 import { RutaProtegida } from './RutaProtegida'
 
@@ -33,17 +33,24 @@ export const proveedorRutas = createBrowserRouter([
     element: <LayoutPrincipal />,
     errorElement: <NoEncontradoPagina />,
     children: [
+      // 🔑 SOLUCIÓN: La raíz carga la página de inicio para mostrar el hero principal
       { index: true, element: <InicioPagina /> },
+      
+      // 🔐 Rutas de autenticación restauradas a sus nombres originales correctos
       { path: 'iniciar-sesion', element: <IniciarSesionPagina /> },
       { path: 'registro', element: <RegistroPagina /> },
       { path: 'registro/verificar', element: <VerificarRegistroPagina /> },
       { path: 'recuperar-password/codigo', element: <RecuperarPasswordCodigoPagina /> },
-      { path: 'recuperar-password/cambiar', element: <RecuperarPasswordCambioPagina /> },
+      { path: 'recuperar-password/cambio', element: <RecuperarPasswordCambioPagina /> },
+      
+      // Rutas públicas de la aplicación
       { path: 'eventos', element: <EventosPagina /> },
       { path: 'peleadores', element: <PeleadoresPagina /> },
       { path: 'predicciones', element: <PrediccionesPagina /> },
       { path: 'rankings', element: <RankingsPagina /> },
       { path: 'historico', element: <HistoricoPagina /> },
+      
+      // Rutas protegidas para usuarios logueados
       {
         element: <RutaProtegida />,
         children: [

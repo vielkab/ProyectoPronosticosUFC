@@ -11,8 +11,9 @@ export type SesionAutenticada = {
 export type ValorAutenticacion = {
   sesion: SesionAutenticada | null
   autenticado: boolean
+  cargando: boolean
   guardarSesion: (sesion: SesionAutenticada) => void
-  cerrarSesion: () => void
+  cerrarSesion: () => Promise<void>
 }
 
 export const CLAVE_STORAGE = 'pronostats.sesion'

@@ -20,9 +20,9 @@ export function HistorialApuestasPagina() {
 
     listarHistorialApuestas(sesion.accessToken)
       .then(setApuestas)
-      .catch((error) => {
+      .catch(async (error) => {
         if (esErrorAutorizacion(error)) {
-          cerrarSesion()
+          await cerrarSesion()
           setError('Tu sesión expiró. Inicia sesión nuevamente.')
           return
         }

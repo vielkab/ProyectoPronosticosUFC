@@ -1,18 +1,12 @@
-import { useMutation } from '@tanstack/react-query'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSignIn } from '@clerk/clerk-react'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
-import {
-  solicitarRecuperacionPassword,
-  verificarCodigoRecuperacion,
-} from '../services/auth'
-import { obtenerMensajeError } from '../utils/errores'
-
 const esquema = z.object({
-  usuario: z.string().min(3, 'Ingresa tu usuario'),
+  correo: z.string().email('Ingresa un correo válido'),
   codigo: z.string().length(6, 'El código debe tener 6 dígitos').regex(/^\d{6}$/, 'El código debe contener solo números'),
 })
 
@@ -21,7 +15,14 @@ type FormularioCodigo = z.infer<typeof esquema>
 export function RecuperarPasswordCodigoPagina() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const usuarioInicial = searchParams.get('usuario') ?? ''
+  const { isLoaded, signIn } = useSignIn()
+  
+  const [mensajeExito, setMensajeExito] = useState<string | null>(null)
+  const [errorClerk, setErrorClerk] = useState<string | null>(null)
+  const [cargando, setCargando] = useState(false)
+  const autoEnviadoRef = useRef(false)
+
+  const correoInicial = searchParams.get('correo') ?? ''
   const auto = searchParams.get('auto') === '1'
 
   const {
@@ -32,45 +33,54 @@ export function RecuperarPasswordCodigoPagina() {
   } = useForm<FormularioCodigo>({
     resolver: zodResolver(esquema),
     defaultValues: {
-      usuario: usuarioInicial,
+      correo: correoInicial,
       codigo: '',
     },
   })
 
-  const mutacionEnviarCodigo = useMutation({
-    mutationFn: solicitarRecuperacionPassword,
-  })
+  // Función dedicada a solicitar o reenviar el código OTP a través de Clerk
+  const enviarCodigoClerk = async (correo: string) => {
+    if (!isLoaded) return
+    setCargando(true)
+    setErrorClerk(null)
+    setMensajeExito(null)
 
-  const mutacionVerificarCodigo = useMutation({
-    mutationFn: verificarCodigoRecuperacion,
-    onSuccess: (_, variables) => {
-      navigate(
-        `/recuperar-password/cambiar?usuario=${encodeURIComponent(variables.usuario)}&codigo=${encodeURIComponent(variables.codigo)}`,
-      )
-    },
-  })
+    try {
+      await signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: correo,
+      })
+      setMensajeExito('Se ha enviado un código de verificación al correo registrado a esta cuenta.')
+    } catch (err: any) {
+      setErrorClerk(err.errors?.[0]?.message || 'No se pudo enviar el código de recuperación.')
+    } finally {
+      setCargando(false)
+    }
+  }
 
   useEffect(() => {
-    if (!auto || !usuarioInicial) {
+    if (!auto || !correoInicial || !isLoaded || autoEnviadoRef.current) {
       return
     }
 
-    mutacionEnviarCodigo.mutate({ usuario: usuarioInicial })
-    setValue('usuario', usuarioInicial)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auto, usuarioInicial, setValue])
+    autoEnviadoRef.current = true
+    enviarCodigoClerk(correoInicial)
+    setValue('correo', correoInicial)
+  }, [auto, correoInicial, isLoaded, setValue])
 
   const validarCodigo = (valores: FormularioCodigo) => {
-    mutacionVerificarCodigo.mutate(valores)
+    navigate(
+      `/recuperar-password/cambio?correo=${encodeURIComponent(valores.correo)}&codigo=${encodeURIComponent(valores.codigo)}`,
+    )
   }
 
   const reenviarCodigo = () => {
-    const usuario = searchParams.get('usuario') ?? usuarioInicial
-    if (!usuario) {
+    const correo = searchParams.get('correo') ?? correoInicial
+    if (!correo) {
+      setErrorClerk('Por favor introduce un correo válido para reenviar el código.')
       return
     }
-
-    mutacionEnviarCodigo.mutate({ usuario })
+    enviarCodigoClerk(correo)
   }
 
   return (
@@ -84,9 +94,9 @@ export function RecuperarPasswordCodigoPagina() {
 
       <form className="mt-6 flex flex-col gap-5" onSubmit={handleSubmit(validarCodigo)}>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-slate-200">Usuario</span>
-          <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400" {...register('usuario')} />
-          {errors.usuario ? <span className="text-sm text-red-300">{errors.usuario.message}</span> : null}
+          <span className="text-sm font-medium text-slate-200">Correo</span>
+          <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400" type="email" {...register('correo')} />
+          {errors.correo ? <span className="text-sm text-red-300">{errors.correo.message}</span> : null}
         </label>
 
         <label className="flex flex-col gap-2">
@@ -95,29 +105,29 @@ export function RecuperarPasswordCodigoPagina() {
           {errors.codigo ? <span className="text-sm text-red-300">{errors.codigo.message}</span> : null}
         </label>
 
-        {mutacionEnviarCodigo.isSuccess ? (
-          <span className="text-sm text-emerald-300">{mutacionEnviarCodigo.data.mensaje}</span>
+        {mensajeExito ? (
+          <span className="text-sm text-emerald-300">{mensajeExito}</span>
         ) : null}
 
-        {mutacionEnviarCodigo.isError ? (
-          <span className="text-sm text-red-300">{obtenerMensajeError(mutacionEnviarCodigo.error, 'No se pudo reenviar el código.')}</span>
+        {errorClerk ? (
+          <span className="text-sm text-red-300">{errorClerk}</span>
         ) : null}
 
-        {mutacionVerificarCodigo.isError ? (
-          <span className="text-sm text-red-300">{obtenerMensajeError(mutacionVerificarCodigo.error, 'No se pudo validar el código.')}</span>
-        ) : null}
-
-        <button className="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-70" disabled={mutacionVerificarCodigo.isPending} type="submit">
-          {mutacionVerificarCodigo.isPending ? 'Validando...' : 'Validar código'}
+        <button 
+          className="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-70" 
+          disabled={cargando || !isLoaded} 
+          type="submit"
+        >
+          Validar código
         </button>
 
         <button
-          className="rounded-2xl border border-white/15 bg-white/5 px-5 py-3 font-semibold text-white transition hover:border-red-400/60"
-          disabled={mutacionEnviarCodigo.isPending}
+          className="rounded-2xl border border-white/15 bg-white/5 px-5 py-3 font-semibold text-white transition hover:border-red-400/60 disabled:opacity-50"
+          disabled={cargando || !isLoaded}
           onClick={reenviarCodigo}
           type="button"
         >
-          {mutacionEnviarCodigo.isPending ? 'Reenviando...' : 'Reenviar código'}
+          {cargando ? 'Enviando...' : 'Reenviar código'}
         </button>
       </form>
     </section>

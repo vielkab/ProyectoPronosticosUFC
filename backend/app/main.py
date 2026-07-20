@@ -2,7 +2,6 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import api_router
-from app.auth.bootstrap import asegurar_admin_inicial
 from app.core.base_de_datos import aplicar_migraciones, inicializar_base_de_datos
 from app.core.configuracion import ajustes
 from app.historico.loader import load_historical_datasets
@@ -42,7 +41,9 @@ def crear_aplicacion() -> FastAPI:
         try:
             aplicar_migraciones()
             inicializar_base_de_datos()
-            asegurar_admin_inicial()
+            # 🚨 QUITAMOS asegurar_admin_inicial() para evitar conflictos de contraseñas locales.
+            # Ahora la cuenta del Administrador (Vielka/Dana White) se gestiona de forma nativa
+            # con Clerk y la fusión automática JIT de dependencias.py.
             logger.info("Base de datos inicializada correctamente en el arranque.")
         except Exception as e:
             logger.error("Error critico durante la inicializacion de la base de datos en el arranque: %s", str(e), exc_info=True)
@@ -61,9 +62,8 @@ def crear_aplicacion() -> FastAPI:
             "database_url_configurada": bool(ajustes.database_url),
             "database_url_es_defecto": "localhost:5432" in ajustes.database_url,
             "stripe_configurado": bool(ajustes.stripe_secret_key.strip()),
-            "smtp_configurado": bool(ajustes.smtp_host.strip()),
-            "resend_configurado": bool(ajustes.resend_api_key.strip()),
-            "guardar_codigos_desarrollo": ajustes.guardar_codigos_desarrollo,
+            # 🔐 ACTUALIZADO: Monitoreamos Clerk en lugar del SMTP obsoleto
+            "clerk_secret_key_configurada": bool(getattr(ajustes, "clerk_secret_key", "").strip()),
             "base_datos_conexion": "Desconocido",
             "base_datos_error": None
         }

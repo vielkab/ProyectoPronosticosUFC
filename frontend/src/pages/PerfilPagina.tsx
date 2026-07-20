@@ -30,8 +30,8 @@ export function PerfilPagina() {
 
   const mutacionEliminar = useMutation({
     mutationFn: () => eliminarMiCuenta(sesion!.accessToken),
-    onSuccess: () => {
-      cerrarSesion()
+    onSuccess: async () => {
+      await cerrarSesion()
       navigate('/')
     },
   })

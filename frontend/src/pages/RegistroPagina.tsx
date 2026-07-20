@@ -1,12 +1,11 @@
-import { useMutation } from '@tanstack/react-query'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
+import { useSignUp } from '@clerk/clerk-react'
 import { z } from 'zod'
 
 import { CampoPassword } from '../components/forms/CampoPassword'
-import { registrarUsuario } from '../services/auth'
-import { obtenerMensajeError } from '../utils/errores'
 
 const esquema = z
   .object({
@@ -49,6 +48,10 @@ type FormularioRegistro = z.infer<typeof esquema>
 
 export function RegistroPagina() {
   const navigate = useNavigate()
+  const { isLoaded, signUp } = useSignUp()
+  const [errorClerk, setErrorClerk] = useState<string | null>(null)
+  const [cargando, setCargando] = useState(false)
+
   const {
     register,
     handleSubmit,
@@ -61,22 +64,33 @@ export function RegistroPagina() {
     }
   })
 
-  const mutacionRegistro = useMutation({
-    mutationFn: registrarUsuario,
-    onSuccess: (respuesta, variables) => {
-      navigate(`/registro/verificar?correo=${encodeURIComponent(variables.correo)}&mensaje=${encodeURIComponent(respuesta.mensaje)}`)
-    },
-  })
+  const enviarFormulario = async (valores: FormularioRegistro) => {
+    if (!isLoaded) return
+    setCargando(true)
+    setErrorClerk(null)
 
-  const enviarFormulario = (valores: FormularioRegistro) => {
-    mutacionRegistro.mutate({
-      usuario: valores.usuario,
-      correo: valores.correo,
-      password: valores.password,
-      cedula: valores.cedula,
-      fecha_nacimiento: new Date(valores.fechaNacimiento).toISOString(),
-      acepta_terminos: valores.aceptaTerminos,
-    })
+    try {
+      // Crear la cuenta provisional en Clerk e inyectar metadatos
+      await signUp.create({
+        username: valores.usuario,
+        emailAddress: valores.correo,
+        password: valores.password,
+        unsafeMetadata: {
+          cedula: valores.cedula,
+          fecha_nacimiento: new Date(valores.fechaNacimiento).toISOString(),
+        }
+      })
+
+      // Preparar y enviar el código de verificación por correo
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' })
+
+      // Redirigir a la página donde se ingresa el código OTP
+      navigate(`/registro/verificar?correo=${encodeURIComponent(valores.correo)}&mensaje=${encodeURIComponent('Código enviado con éxito.')}`)
+    } catch (err: any) {
+      setErrorClerk(err.errors?.[0]?.message || 'No se pudo completar el registro.')
+    } finally {
+      setCargando(false)
+    }
   }
 
   return (
@@ -99,7 +113,6 @@ export function RegistroPagina() {
           {errors.correo ? <span className="text-sm text-red-300">{errors.correo.message}</span> : null}
         </label>
 
-        {/* Campos de Verificación de Edad e Identidad */}
         <label className="flex flex-col gap-2">
           <span className="text-sm font-medium text-slate-200">Número de Cédula / DNI</span>
           <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400 focus:bg-white/10" {...register('cedula')} placeholder="Ej. 1712345678" />
@@ -121,14 +134,12 @@ export function RegistroPagina() {
         </label>
 
         <CampoPassword etiqueta="Contraseña" error={errors.password?.message} registro={register('password')} placeholder="Ejemplo: Maria123" />
-
         <CampoPassword etiqueta="Confirmar contraseña" error={errors.confirmarPassword?.message} registro={register('confirmarPassword')} />
 
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 md:col-span-2">
           Requisitos de contraseña: mínimo 8 caracteres, una mayúscula, una minúscula y un número.
         </div>
 
-        {/* Declaraciones Juradas y Aceptación de Términos (Cumplimiento de Casas de Apuestas Reales) */}
         <label className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-950/20 p-4 md:col-span-2">
           <input className="mt-1 h-5 w-5 rounded border-white/10 bg-white/5 text-red-600 transition" type="checkbox" {...register('aceptaTerminos')} />
           <div className="flex flex-col">
@@ -141,21 +152,16 @@ export function RegistroPagina() {
           </div>
         </label>
 
-        {mutacionRegistro.isError ? (
-          <span className="text-sm text-red-300 md:col-span-2">
-            {obtenerMensajeError(
-              mutacionRegistro.error,
-              'No se pudo completar el registro.',
-            )}
-          </span>
+        {errorClerk ? (
+          <span className="text-sm text-red-300 md:col-span-2">{errorClerk}</span>
         ) : null}
 
         <button
           className="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
-          disabled={mutacionRegistro.isPending}
+          disabled={cargando || !isLoaded}
           type="submit"
         >
-          {mutacionRegistro.isPending ? 'Registrando...' : 'Registrarme'}
+          {cargando ? 'Registrando...' : 'Registrarme'}
         </button>
       </form>
     </section>
