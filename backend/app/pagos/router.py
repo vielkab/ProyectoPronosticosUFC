@@ -15,6 +15,7 @@ router = APIRouter(prefix="/pagos", tags=["pagos"])
 @router.post("/checkout", response_model=CheckoutRespuesta)
 def crear_checkout_endpoint(
     payload: CheckoutEntrada,
+    request: Request,
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
     db: Session = Depends(obtener_db),
 ) -> CheckoutRespuesta:
@@ -37,9 +38,13 @@ def crear_checkout_endpoint(
         db.commit()
         print(f"🚀 [Stripe Bypass Directo] Créditos sumados con éxito para el usuario ID: {usuario_actual.id}")
         
+        origen_frontend = request.headers.get("origin") or configuracion.settings.FRONTEND_URL
+        if origen_frontend.endswith("/"):
+            origen_frontend = origen_frontend[:-1]
+
         # 4. Devolvemos la URL del frontend para que redirija al instante
         return CheckoutRespuesta(
-            url=f"{configuracion.settings.FRONTEND_URL}/billetera?status=success"
+            url=f"{origen_frontend}/billetera?status=success"
         )
 
     # -----------------------------------------------------------------

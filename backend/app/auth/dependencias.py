@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt
 from sqlalchemy.orm import Session
-from sqlalchemy import select
+from sqlalchemy import select, func
 
 from app.core.base_de_datos import obtener_db
 from app.usuarios.models import Usuario
@@ -49,19 +49,36 @@ async def obtener_usuario_actual(
         )
 
     # Extraer el email desde las claims conocidas de Clerk
-    email = (
-        payload.get("email")
-        or (payload.get("emails") or [None])[0]
-        or (
-            payload.get("email_addresses")
-            and payload.get("email_addresses")[0].get("email_address")
-        )
-        or (
-            payload.get("email_addresses")
-            and payload.get("email_addresses")[0].get("email")
-        )
-    )
+    def extraer_email(claims: dict) -> str | None:
+        valor_directo = claims.get("email")
+        if isinstance(valor_directo, str) and valor_directo.strip():
+            return valor_directo.strip()
 
+        emails = claims.get("emails")
+        if isinstance(emails, list) and emails:
+            primero = emails[0]
+            if isinstance(primero, str) and primero.strip():
+                return primero.strip()
+            if isinstance(primero, dict):
+                for clave in ("email", "email_address", "value"):
+                    valor = primero.get(clave)
+                    if isinstance(valor, str) and valor.strip():
+                        return valor.strip()
+
+        email_addresses = claims.get("email_addresses")
+        if isinstance(email_addresses, list) and email_addresses:
+            primero = email_addresses[0]
+            if isinstance(primero, str) and primero.strip():
+                return primero.strip()
+            if isinstance(primero, dict):
+                for clave in ("email", "email_address", "value"):
+                    valor = primero.get(clave)
+                    if isinstance(valor, str) and valor.strip():
+                        return valor.strip()
+
+        return None
+
+    email = extraer_email(payload)
     if email:
         email = email.strip().lower()
 
@@ -71,16 +88,37 @@ async def obtener_usuario_actual(
 
     if not usuario and email:
         # 2. Si no tiene clerk_id pero coincide el correo, migramos la cuenta existente
-        usuario = db.scalar(select(Usuario).where(Usuario.correo == email))
+        usuario = db.scalar(
+            select(Usuario).where(func.lower(Usuario.correo) == func.lower(email))
+        )
         if usuario:
             usuario.clerk_id = clerk_user_id
+            if not usuario.correo:
+                usuario.correo = email
             db.commit()
+
+    if usuario:
+        # Actualizar el nombre si el usuario fue creado con nombre provisional
+        nombre_real = (
+            payload.get("name")
+            or payload.get("full_name")
+            or payload.get("given_name")
+            or payload.get("preferred_username")
+            or payload.get("username")
+        )
+        if nombre_real:
+            nombre_real = nombre_real.strip()
+            nombre_actual = usuario.nombre.strip()
+            if nombre_real and nombre_real != nombre_actual and nombre_actual.startswith("user_"):
+                usuario.nombre = nombre_real
+                db.commit()
 
     if not usuario:
         # 3. Si es completamente nuevo, lo registramos usando los claims del JWT
         nombre_provisional = (
             payload.get("name")
             or payload.get("full_name")
+            or payload.get("given_name")
             or payload.get("preferred_username")
             or payload.get("username")
             or (email.split("@")[0] if email else f"user_{clerk_user_id[:6]}")
