@@ -25,4 +25,12 @@ class ApuestaResumen(BaseModel):
     peleador_seleccionado_id: int
     metodo_victoria: str | None = None
     round: int | None = None
+    porcentaje_retiro: float | None = None
+    monto_reembolso: float | None = None
     creado_en: datetime
+
+
+class RetiroApuestaRespuesta(BaseModel):
+    apuesta: ApuestaResumen
+    reembolso: float
+    porcentaje_reembolso: float

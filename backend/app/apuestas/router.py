@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.apuestas.schemas import ApuestaEntrada, ApuestaResumen
+from app.apuestas.schemas import ApuestaEntrada, ApuestaResumen, RetiroApuestaRespuesta
 # Importamos las nuevas funciones aquí:
 from app.apuestas.service import (
     cobrar_apuesta,
     crear_apuesta,
     listar_historial,
+    retirar_apuesta,
     procesar_resultados_pelea,
     obtener_estadisticas_usuario,
 )
@@ -42,6 +43,21 @@ def cobrar_apuesta_endpoint(
 ) -> ApuestaResumen:
     """Acredita una apuesta ganada una sola vez en la billetera del usuario."""
     return cobrar_apuesta(db, usuario_actual, apuesta_id)
+
+
+@router.post("/{apuesta_id}/retirar", response_model=RetiroApuestaRespuesta)
+def retirar_apuesta_endpoint(
+    apuesta_id: int,
+    usuario_actual: Usuario = Depends(obtener_usuario_actual),
+    db: Session = Depends(obtener_db),
+) -> RetiroApuestaRespuesta:
+    """Retira una apuesta pendiente y acredita el reembolso aplicable."""
+    apuesta, reembolso, porcentaje = retirar_apuesta(db, usuario_actual, apuesta_id)
+    return RetiroApuestaRespuesta(
+        apuesta=apuesta,
+        reembolso=reembolso,
+        porcentaje_reembolso=porcentaje,
+    )
 
 
 # --- NUEVOS ENDPOINTS PARA TU PANEL Y LÓGICA DE APUESTAS ---

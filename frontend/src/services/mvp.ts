@@ -126,7 +126,15 @@ export type ApuestaResumen = {
   peleador_seleccionado_id: number
   metodo_victoria: string | null
   round: number | null
+  porcentaje_retiro: number | null
+  monto_reembolso: number | null
   creado_en: string
+}
+
+export type RetiroApuestaRespuesta = {
+  apuesta: ApuestaResumen
+  reembolso: number
+  porcentaje_reembolso: number
 }
 
 export type ResumenAdmin = {
@@ -234,6 +242,13 @@ export async function crearCheckout(token: string, apuestaId: number): Promise<{
 
 export async function cobrarApuesta(token: string, apuestaId: number): Promise<ApuestaResumen> {
   const { data } = await api.post<ApuestaResumen>(`/apuestas/${apuestaId}/cobrar`, undefined, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return data
+}
+
+export async function retirarApuesta(token: string, apuestaId: number): Promise<RetiroApuestaRespuesta> {
+  const { data } = await api.post<RetiroApuestaRespuesta>(`/apuestas/${apuestaId}/retirar`, undefined, {
     headers: { Authorization: `Bearer ${token}` },
   })
   return data

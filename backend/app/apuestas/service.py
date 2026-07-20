@@ -130,6 +130,53 @@ def cobrar_apuesta(db: Session, usuario: Usuario, apuesta_id: int) -> Apuesta:
     return apuesta
 
 
+def retirar_apuesta(db: Session, usuario: Usuario, apuesta_id: int) -> tuple[Apuesta, float, float]:
+    """Cancela una apuesta pendiente y devuelve parte de su monto a la billetera."""
+    apuesta = db.scalar(
+        select(Apuesta).where(Apuesta.id == apuesta_id, Apuesta.usuario_id == usuario.id)
+    )
+    if not apuesta:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
+
+    if apuesta.estado != "Pendiente" or apuesta.estado_pago != "pendiente":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Esta apuesta ya no está disponible para retiro.",
+        )
+
+    pelea = db.get(Pelea, apuesta.pelea_id)
+    if not pelea or pelea.estado not in {"programada", "en_curso"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se puede retirar una apuesta de una pelea finalizada o cancelada.",
+        )
+
+    porcentaje = 0.70 if pelea.estado == "en_curso" else 0.90
+    reembolso = round(apuesta.monto * porcentaje, 2)
+    billetera = db.scalar(select(Billetera).where(Billetera.usuario_id == usuario.id))
+    if not billetera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Billetera no encontrada.")
+
+    retiro = db.execute(
+        update(Apuesta)
+        .where(
+            Apuesta.id == apuesta_id,
+            Apuesta.usuario_id == usuario.id,
+            Apuesta.estado == "Pendiente",
+            Apuesta.estado_pago == "pendiente",
+        )
+        .values(estado="Retirada", estado_pago="reembolsado")
+    )
+    if retiro.rowcount != 1:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Esta apuesta ya fue procesada.")
+
+    billetera.saldo += reembolso
+    db.commit()
+    db.refresh(apuesta)
+    return apuesta, reembolso, porcentaje
+
+
 def procesar_resultados_pelea(db: Session, pelea_id: int, peleador_ganador_id: int) -> dict:
     """Resuelve apuestas pendientes; las ganadas quedan disponibles para cobro."""
 
