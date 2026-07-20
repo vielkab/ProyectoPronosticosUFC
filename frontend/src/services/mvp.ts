@@ -231,3 +231,10 @@ export async function crearCheckout(token: string, apuestaId: number): Promise<{
   )
   return data
 }
+
+export async function cobrarApuesta(token: string, apuestaId: number): Promise<ApuestaResumen> {
+  const { data } = await api.post<ApuestaResumen>(`/apuestas/${apuestaId}/cobrar`, undefined, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+  return data
+}

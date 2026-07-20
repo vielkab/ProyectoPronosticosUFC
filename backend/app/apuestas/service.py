@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.apuestas.models import Apuesta
@@ -87,9 +87,51 @@ def listar_historial(db: Session, usuario: Usuario) -> list[Apuesta]:
     )
 
 
+def cobrar_apuesta(db: Session, usuario: Usuario, apuesta_id: int) -> Apuesta:
+    apuesta = db.scalar(
+        select(Apuesta).where(Apuesta.id == apuesta_id, Apuesta.usuario_id == usuario.id)
+    )
+    if not apuesta:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Apuesta no encontrada.")
+
+    if apuesta.estado != "Ganada":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Solo se pueden cobrar apuestas ganadas.",
+        )
+
+    if apuesta.estado_pago != "pendiente":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Esta apuesta ya fue procesada.",
+        )
+
+    billetera = db.scalar(select(Billetera).where(Billetera.usuario_id == usuario.id))
+    if not billetera:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Billetera no encontrada.")
+
+    cobro = db.execute(
+        update(Apuesta)
+        .where(
+            Apuesta.id == apuesta_id,
+            Apuesta.usuario_id == usuario.id,
+            Apuesta.estado == "Ganada",
+            Apuesta.estado_pago == "pendiente",
+        )
+        .values(estado_pago="pagado")
+    )
+    if cobro.rowcount != 1:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Esta apuesta ya fue cobrada.")
+
+    billetera.saldo += apuesta.monto * apuesta.cuota
+    db.commit()
+    db.refresh(apuesta)
+    return apuesta
+
+
 def procesar_resultados_pelea(db: Session, pelea_id: int, peleador_ganador_id: int) -> dict:
-    """Resuelve apuestas pendientes de una pelea y acredita ganancias."""
-    from app.billetera.models import Billetera
+    """Resuelve apuestas pendientes; las ganadas quedan disponibles para cobro."""
 
     apuestas = db.scalars(
         select(Apuesta).where(Apuesta.pelea_id == pelea_id, Apuesta.estado == "Pendiente")
@@ -100,11 +142,8 @@ def procesar_resultados_pelea(db: Session, pelea_id: int, peleador_ganador_id: i
     for apuesta in apuestas:
         if apuesta.peleador_seleccionado_id == peleador_ganador_id:
             apuesta.estado = "Ganada"
-            apuesta.estado_pago = "pagado"
+            apuesta.estado_pago = "pendiente"
             ganadas += 1
-            billetera = db.scalar(select(Billetera).where(Billetera.usuario_id == apuesta.usuario_id))
-            if billetera:
-                billetera.saldo += apuesta.monto * apuesta.cuota
         else:
             apuesta.estado = "Perdida"
             apuesta.estado_pago = "completado"

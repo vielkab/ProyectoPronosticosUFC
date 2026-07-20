@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { TarjetaResumen } from '../components/ui/TarjetaResumen'
 import { useAutenticacion } from '../hooks/useAutenticacion'
-import { listarHistorialApuestas, type ApuestaResumen } from '../services/mvp'
+import { cobrarApuesta, listarHistorialApuestas, type ApuestaResumen } from '../services/mvp'
 import { esErrorAutorizacion } from '../utils/errores'
 import { formatearMoneda } from '../utils/formatos'
 
@@ -12,6 +12,8 @@ export function HistorialApuestasPagina() {
   const [apuestas, setApuestas] = useState<ApuestaResumen[]>([])
   const [cargando, setCargando] = useState(Boolean(sesion?.accessToken))
   const [error, setError] = useState('')
+  const [mensaje, setMensaje] = useState('')
+  const [cobrandoId, setCobrandoId] = useState<number | null>(null)
 
   useEffect(() => {
     if (!sesion?.accessToken) {
@@ -31,6 +33,30 @@ export function HistorialApuestasPagina() {
       })
       .finally(() => setCargando(false))
   }, [cerrarSesion, sesion?.accessToken])
+
+  async function cobrar(apuestaId: number) {
+    if (!sesion?.accessToken) return
+
+    setCobrandoId(apuestaId)
+    setError('')
+    setMensaje('')
+    try {
+      const apuestaCobrada = await cobrarApuesta(sesion.accessToken, apuestaId)
+      setApuestas((actuales) => actuales.map((apuesta) => (
+        apuesta.id === apuestaId ? apuestaCobrada : apuesta
+      )))
+      setMensaje(`Cobraste ${formatearMoneda(apuestaCobrada.monto * apuestaCobrada.cuota)} en créditos.`)
+    } catch (error) {
+      if (esErrorAutorizacion(error)) {
+        cerrarSesion()
+        setError('Tu sesión expiró. Inicia sesión nuevamente.')
+        return
+      }
+      setError('No se pudo cobrar la apuesta. Inténtalo nuevamente.')
+    } finally {
+      setCobrandoId(null)
+    }
+  }
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -60,6 +86,12 @@ export function HistorialApuestasPagina() {
       {error && (
         <p className="rounded-lg border border-red-400/30 bg-red-500/10 p-4 text-red-100">
           {error}
+        </p>
+      )}
+
+      {mensaje && (
+        <p className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4 text-emerald-100">
+          {mensaje}
         </p>
       )}
 
@@ -143,6 +175,19 @@ export function HistorialApuestasPagina() {
                       })}
                     </p>
                   </div>
+
+                  {apuesta.estado === 'Ganada' && apuesta.estado_pago === 'pendiente' && (
+                    <button
+                      className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-bold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={cobrandoId === apuesta.id}
+                      onClick={() => cobrar(apuesta.id)}
+                      type="button"
+                    >
+                      {cobrandoId === apuesta.id
+                        ? 'Cobrando...'
+                        : `Cobrar ${formatearMoneda(apuesta.monto * apuesta.cuota)}`}
+                    </button>
+                  )}
                 </div>
               }
             />
