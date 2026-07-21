@@ -23,11 +23,19 @@ def crear_aplicacion() -> FastAPI:
         debug=ajustes.app_debug,
     )
 
-    # En desarrollo permitir orígenes flexibles para evitar errores CORS
-    if ajustes.es_desarrollo:
-        allow_origins = ["*"]
-    else:
-        allow_origins = ajustes.frontend_origenes_permitidos
+    # 🛡️ CORS BLINDADO: Definimos explícitamente los orígenes permitidos tanto en desarrollo como en producción
+    allow_origins = [
+        "https://proyecto-pronosticos-ufc.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]
+    
+    # Si tienes configurados otros orígenes en tus ajustes, los agregamos de forma segura
+    if hasattr(ajustes, "frontend_origenes_permitidos") and ajustes.frontend_origenes_permitidos:
+        if isinstance(ajustes.frontend_origenes_permitidos, list):
+            for origen in ajustes.frontend_origenes_permitidos:
+                if origen not in allow_origins:
+                    allow_origins.append(origen)
 
     aplicacion.add_middleware(
         CORSMiddleware,
@@ -101,7 +109,6 @@ def crear_aplicacion() -> FastAPI:
     )
 
     # 🟢 Registrar un único api_router centralizado bajo el prefijo /api
-    # Esto servirá a todas las rutas hijas (ej. /api/usuarios, /api/apuestas, /api/eventos, /api/billetera, /api/peleadores)
     aplicacion.include_router(api_router, prefix="/api")
 
     return aplicacion
