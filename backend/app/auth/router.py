@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends
 from app.usuarios.models import Usuario
 from app.auth.dependencias import obtener_usuario_actual
 
-router = APIRouter(prefix="/auth", tags=["auth"])
+# 🟢 Se remueve el prefix="/auth" duplicado aquí para evitar la ruta /auth/auth/
+router = APIRouter(tags=["auth"])
 
 @router.get("/estado-sesion")
 def verificar_estado_sesion(

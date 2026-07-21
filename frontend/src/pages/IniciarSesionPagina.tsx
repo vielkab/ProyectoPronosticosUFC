@@ -39,7 +39,6 @@ export function IniciarSesionPagina() {
     },
   })
 
-  // Observamos el campo del correo para poder inyectarlo si eligen recuperar password
   const correoActual = watch('correo')
 
   useEffect(() => {
@@ -52,6 +51,7 @@ export function IniciarSesionPagina() {
 
   const enviarFormulario = async (valores: FormularioInicioSesion) => {
     if (!isLoaded) return
+
     setCargando(true)
     setErrorClerk(null)
 
@@ -61,15 +61,15 @@ export function IniciarSesionPagina() {
         await cerrarSesion()
       }
 
-      // Autenticar de manera nativa empleando Clerk
+      // 1. Autenticar con Clerk
       const resultado = await signIn.create({
         identifier: valores.correo,
         password: valores.password,
       })
 
       if (resultado.status === 'complete') {
+        // 2. Activar la sesión en Clerk
         try {
-          // Almacenar la sesión de Clerk de forma nativa en las cookies
           await setActive({ session: resultado.createdSessionId })
         } catch (setActiveError: any) {
           if (setActiveError?.message?.includes('Session already exists')) {
@@ -80,12 +80,20 @@ export function IniciarSesionPagina() {
           }
         }
 
+        // 3. Obtener JWT Token
         const token = await getToken()
         if (!token) {
           throw new Error('No se pudo obtener el token de sesión de Clerk.')
         }
 
+        // 4. Validar token con el Backend y obtener usuario real de PostgreSQL
         const estado = await verificarEstadoSesion(token)
+
+        if (!estado?.usuario) {
+          throw new Error('No se pudo verificar la información del usuario en el servidor.')
+        }
+
+        // 5. Guardar sesión legítima en el estado global
         guardarSesion({
           accessToken: token,
           refreshToken: '',
@@ -96,26 +104,29 @@ export function IniciarSesionPagina() {
         navigate(destino)
       } else {
         setErrorClerk(
-          'No se pudo completar el inicio de sesión. Verifica tu correo y contraseña. Si tu cuenta ya está validada, usa el correo registrado y la contraseña correcta.',
+          'No se pudo completar el inicio de sesión. Verifica tu correo y contraseña.',
         )
       }
     } catch (err: any) {
-        const mensajeError = err.errors?.[0]?.message || err.message || 'Usuario o contraseña incorrecta.'
+      console.error('❌ Error en inicio de sesión:', err)
+      const mensajeError =
+        err.response?.data?.detail || err.errors?.[0]?.message || err.message || 'Usuario o contraseña incorrecta.'
 
-        if (mensajeError.includes('Session already exists')) {
-          try {
-            await cerrarSesion()
-            setErrorClerk('Cerré la sesión inactiva de Clerk. Vuelve a intentarlo para ingresar con tu cuenta actual.')
-          } catch {
-            setErrorClerk('Ya hay una sesión activa en este navegador. Intenta cerrar sesión manualmente y vuelve a ingresar.')
-          }
-        } else {
-          setErrorClerk(mensajeError)
+      if (mensajeError.includes('Session already exists')) {
+        try {
+          await cerrarSesion()
+          setErrorClerk('Cerré la sesión inactiva de Clerk. Vuelve a intentarlo.')
+        } catch {
+          setErrorClerk('Ya hay una sesión activa en este navegador.')
         }
-      } finally {
-        setCargando(false)
+      } else {
+        setErrorClerk(mensajeError)
       }
+    } finally {
+      setCargando(false)
     }
+  }
+
   return (
     <section className="mx-auto w-full max-w-xl rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 shadow-2xl backdrop-blur-md">
       <h2 className="m-0 text-3xl font-black text-white">Iniciar sesión</h2>
@@ -137,19 +148,20 @@ export function IniciarSesionPagina() {
 
         <div className="flex items-center justify-between gap-4 text-sm">
           <span className="text-slate-400">Tu correo debe estar verificado para poder entrar.</span>
-          
-          {/* Reemplazamos la función manual por un Link directo que active el flujo OTP automático */}
+
           <Link
-            to={correoActual.trim() ? `/recuperar-password/codigo?correo=${encodeURIComponent(correoActual.trim())}&auto=1` : '/recuperar-password/codigo'}
+            to={
+              correoActual.trim()
+                ? `/recuperar-password/codigo?correo=${encodeURIComponent(correoActual.trim())}&auto=1`
+                : '/recuperar-password/codigo'
+            }
             className="font-medium text-red-300 transition hover:text-red-200 hover:underline"
           >
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
 
-        {errorClerk ? (
-          <span className="text-sm text-red-300">{errorClerk}</span>
-        ) : null}
+        {errorClerk ? <span className="text-sm text-red-300">{errorClerk}</span> : null}
 
         <button
           className="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-70"

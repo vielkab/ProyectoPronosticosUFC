@@ -9,7 +9,7 @@ from app.pagos.schemas import CheckoutEntrada, CheckoutRespuesta, PagoRespuesta
 from app.pagos.service import crear_checkout_session, procesar_webhook_stripe, _procesar_recarga_webhook
 from app.usuarios.models import Usuario
 
-router = APIRouter(prefix="/pagos", tags=["pagos"])
+router = APIRouter(tags=["pagos"])
 
 
 @router.post("/checkout", response_model=CheckoutRespuesta)
@@ -44,7 +44,8 @@ def crear_checkout_endpoint(
 
         # 4. Devolvemos la URL del frontend para que redirija al instante
         return CheckoutRespuesta(
-            url=f"{origen_frontend}/billetera?status=success"
+            checkout_url=f"{origen_frontend}/billetera?status=success",
+            session_id="development-bypass",
         )
 
     # -----------------------------------------------------------------

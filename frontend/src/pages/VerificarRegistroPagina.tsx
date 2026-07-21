@@ -1,12 +1,9 @@
-import { useSignUp, useAuth } from '@clerk/clerk-react'
+import { useSignUp } from '@clerk/clerk-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-
-import { useAutenticacion } from '../hooks/useAutenticacion'
-import { verificarEstadoSesion } from '../services/auth'
 
 const esquema = z.object({
   correo: z.string().email('Ingresa un correo válido'),
@@ -19,8 +16,6 @@ export function VerificarRegistroPagina() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
   const { isLoaded, signUp, setActive } = useSignUp()
-  const { getToken } = useAuth()
-  const { guardarSesion, cerrarSesion } = useAutenticacion()
   const [mensajeExito] = useState(searchParams.get('mensaje') ?? '')
   const [errorVerificacion, setErrorVerificacion] = useState<string | null>(null)
   const [cargando, setCargando] = useState(false)
@@ -43,44 +38,26 @@ export function VerificarRegistroPagina() {
     setCargando(true)
 
     try {
-      // Intentar validar el código OTP en los servidores de Clerk
+      // 1. Intentar validar el código OTP en los servidores de Clerk
       const completeSignUp = await signUp.attemptEmailAddressVerification({
         code: valores.codigo,
       })
 
       if (completeSignUp.status === 'complete') {
-        // Activamos la sesión directamente en el cliente
-        try {
-          await setActive({ session: completeSignUp.createdSessionId })
-        } catch (setActiveError: any) {
-          if (setActiveError?.message?.includes('Session already exists')) {
-            await cerrarSesion()
-            await setActive({ session: completeSignUp.createdSessionId })
-          } else {
-            throw setActiveError
-          }
-        }
+        // 2. Activamos la sesión en el cliente.
+        // Al hacer esto, el useEffect de tu AutenticacionContexto se activará automáticamente,
+        // llamará al backend JIT, creará al usuario en PostgreSQL y guardará la sesión de forma limpia.
+        await setActive({ session: completeSignUp.createdSessionId })
 
-        const token = await getToken()
-        if (!token) {
-          throw new Error('No se pudo obtener el token de sesión de Clerk.')
-        }
-
-        const estado = await verificarEstadoSesion(token)
-        guardarSesion({
-          accessToken: token,
-          refreshToken: '',
-          usuario: estado.usuario,
-        })
-
-        // Redirigimos al perfil; el backend JIT creará el registro en PostgreSQL en el primer request
+        // 3. Redirigimos directamente a la ruta protegida.
+        // Tu componente <RutaProtegida /> esperará a que el contexto termine de cargar.
         navigate('/perfil')
       } else {
         console.warn('Estado de verificación incompleto:', completeSignUp)
         setErrorVerificacion('No se pudo completar la verificación de la cuenta.')
       }
     } catch (err: any) {
-      console.error(err)
+      console.error("Error capturado en Clerk:", err)
       setErrorVerificacion(err.errors?.[0]?.message || 'Código incorrecto o expirado.')
     } finally {
       setCargando(false)

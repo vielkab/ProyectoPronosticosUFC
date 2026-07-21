@@ -81,6 +81,10 @@ class Ajustes(BaseSettings):
     @property
     def frontend_url_base(self) -> str:
         from urllib.parse import urlparse
+
+        if self.app_env == "desarrollo":
+            return "http://localhost:5173"
+
         partes = urlparse(self.frontend_url)
         if partes.scheme and partes.netloc:
             return f"{partes.scheme}://{partes.netloc}"

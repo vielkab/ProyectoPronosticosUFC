@@ -17,7 +17,7 @@ from app.billetera.schemas import (
     RecargaResumenSchema,
 )
 
-router = APIRouter(prefix="/billetera", tags=["billetera"])
+router = APIRouter(tags=["billetera"])
 
 
 @router.get("", response_model=BilleteraResumen)

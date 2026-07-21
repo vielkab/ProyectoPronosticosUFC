@@ -10,7 +10,7 @@ from app.core.base_de_datos import obtener_db
 from app.usuarios.models import Usuario
 from app.usuarios.schemas import PerfilUsuario
 
-router = APIRouter(prefix="/usuarios", tags=["usuarios"])
+router = APIRouter(tags=["usuarios"])
 
 
 @router.get("/yo", response_model=PerfilUsuario)

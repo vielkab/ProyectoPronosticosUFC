@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from 'react-router-dom'
 import { useSignUp } from '@clerk/clerk-react'
-import { z } from 'zod'
+import { z } from'zod'
 
 import { CampoPassword } from '../components/forms/CampoPassword'
 
@@ -70,7 +70,7 @@ export function RegistroPagina() {
     setErrorClerk(null)
 
     try {
-      // Crear la cuenta provisional en Clerk e inyectar metadatos
+      // Crear la cuenta provisional en Clerk e inyectar metadatos completos
       await signUp.create({
         username: valores.usuario,
         emailAddress: valores.correo,
@@ -78,6 +78,7 @@ export function RegistroPagina() {
         unsafeMetadata: {
           cedula: valores.cedula,
           fecha_nacimiento: new Date(valores.fechaNacimiento).toISOString(),
+          acepta_terminos: valores.aceptaTerminos, // 👈 Sincronizado con éxito
         }
       })
 

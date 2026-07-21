@@ -20,7 +20,7 @@ from app.eventos.service import (
     sincronizar_eventos_mma,
 )
 
-router = APIRouter(prefix="/eventos", tags=["eventos"])
+router = APIRouter(tags=["eventos"])
 
 
 @router.get("", response_model=list[EventoResumen])
