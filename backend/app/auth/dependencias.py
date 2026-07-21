@@ -13,10 +13,15 @@ from app.core.base_de_datos import obtener_db
 from app.usuarios.models import Usuario
 from app.billetera.models import Billetera
 
+from app.core.configuracion import ajustes
+
 security_scheme = HTTPBearer()
 
-CLERK_ISSUER_URL = "https://precious-alien-55.clerk.accounts.dev"
-CLERK_JWKS_URL = f"{CLERK_ISSUER_URL}/.well-known/jwks.json"
+def _clerk_issuer_url() -> str:
+    return ajustes.clerk_issuer_url.rstrip("/")
+
+def _clerk_jwks_url() -> str:
+    return f"{_clerk_issuer_url()}/.well-known/jwks.json"
 
 # --- CACHE GLOBAL PARA JWKS ---
 _jwks_cache: dict | None = None
@@ -36,7 +41,7 @@ async def obtener_jwks_con_cache() -> dict:
         
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
-            respuesta = await client.get(CLERK_JWKS_URL)
+            respuesta = await client.get(_clerk_jwks_url())
             respuesta.raise_for_status()
             _jwks_cache = respuesta.json()
             _jwks_last_fetch = ahora
@@ -66,7 +71,7 @@ async def obtener_usuario_actual(
             jwks,
             algorithms=["RS256"],
             audience=None,
-            issuer=CLERK_ISSUER_URL
+            issuer=_clerk_issuer_url()
         )
     except ExpiredSignatureError as error:
         raise HTTPException(

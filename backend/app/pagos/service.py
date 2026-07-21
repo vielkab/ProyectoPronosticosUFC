@@ -15,7 +15,7 @@ async def procesar_webhook_stripe(db: Session, request: Request) -> str:
 
     # 🌟 BYPASS PARA DESARROLLO LOCAL
     # Intercepta el JSON simulado antes de que pase por la validación estricta de Stripe
-    if ajustes.app_env == "desarrollo":
+    if ajustes.es_desarrollo:
         evento = json.loads(payload)
         tipo = evento["type"]
         objeto = evento["data"]["object"]

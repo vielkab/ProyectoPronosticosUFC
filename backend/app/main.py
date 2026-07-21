@@ -24,7 +24,7 @@ def crear_aplicacion() -> FastAPI:
     )
 
     # En desarrollo permitir orígenes flexibles para evitar errores CORS
-    if ajustes.app_env == "desarrollo":
+    if ajustes.es_desarrollo:
         allow_origins = ["*"]
     else:
         allow_origins = ajustes.frontend_origenes_permitidos
@@ -77,9 +77,7 @@ def crear_aplicacion() -> FastAPI:
             "database_url_configurada": bool(ajustes.database_url),
             "database_url_es_defecto": "localhost:5432" in ajustes.database_url,
             "stripe_configurado": bool(ajustes.stripe_secret_key.strip()),
-            "clerk_secret_key_configurada": bool(
-                getattr(ajustes, "clerk_secret_key", "").strip()
-            ),
+            "clerk_secret_key_configurada": bool(ajustes.clerk_secret_key.strip()),
             "base_datos_conexion": "Desconocido",
             "base_datos_error": None,
         }

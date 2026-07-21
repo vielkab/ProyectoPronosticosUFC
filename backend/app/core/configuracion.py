@@ -13,8 +13,8 @@ class Ajustes(BaseSettings):
 
     app_nombre: str = "PronoStats UFC API"
     app_version: str = "0.1.0"
-    app_env: str = "desarrollo"
-    app_debug: bool = True
+    app_env: str = Field("desarrollo", alias="APP_ENV")
+    app_debug: bool = Field(True, alias="APP_DEBUG")
 
     database_url: str = Field(
         "postgresql+psycopg://postgres:postgres@localhost:5432/pronostats_ufc",
@@ -37,6 +37,12 @@ class Ajustes(BaseSettings):
     stripe_secret_key: str = Field("", alias="STRIPE_SECRET_KEY")
     stripe_webhook_secret: str = Field("", alias="STRIPE_WEBHOOK_SECRET")
     stripe_public_key: str = Field("", alias="STRIPE_PUBLIC_KEY")
+    clerk_issuer_url: str = Field(
+        "https://precious-alien-55.clerk.accounts.dev",
+        alias="CLERK_ISSUER_URL",
+    )
+    clerk_webhook_secret: str = Field("", alias="CLERK_WEBHOOK_SECRET")
+    clerk_secret_key: str = Field("", alias="CLERK_SECRET_KEY")
     frontend_url: str = Field("http://localhost:5173", alias="FRONTEND_URL")
     frontend_urls: str = Field(
         "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5173,http://127.0.0.1:5174",
@@ -79,16 +85,23 @@ class Ajustes(BaseSettings):
 
 
     @property
+    def es_desarrollo(self) -> bool:
+        return self.app_env.strip().casefold() == "desarrollo"
+
+    @property
     def frontend_url_base(self) -> str:
         from urllib.parse import urlparse
 
-        if self.app_env == "desarrollo":
+        if self.frontend_url.strip():
+            partes = urlparse(self.frontend_url)
+            if partes.scheme and partes.netloc:
+                return f"{partes.scheme}://{partes.netloc}"
+            return self.frontend_url.strip()
+
+        if self.es_desarrollo:
             return "http://localhost:5173"
 
-        partes = urlparse(self.frontend_url)
-        if partes.scheme and partes.netloc:
-            return f"{partes.scheme}://{partes.netloc}"
-        return self.frontend_url
+        return ""
 
 
 ajustes = Ajustes()

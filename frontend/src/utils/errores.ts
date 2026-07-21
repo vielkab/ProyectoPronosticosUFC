@@ -26,7 +26,7 @@ export function obtenerMensajeError(error: unknown, mensajePorDefecto: string): 
     }
 
     if (!error.response) {
-      return 'No fue posible conectar con el backend. Verifica que la API esté ejecutándose en http://localhost:8000.'
+      return 'No fue posible conectar con el backend. Verifica tu conexion a internet o que la API este disponible.'
     }
   }
 

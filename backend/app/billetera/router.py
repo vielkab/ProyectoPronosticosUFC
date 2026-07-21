@@ -97,7 +97,7 @@ def recargar_creditos(
 
     stripe.api_key = ajustes.stripe_secret_key
     origen_frontend = request.headers.get("origin") or ajustes.frontend_url_base
-    if not origen_frontend.strip() and ajustes.app_env == "desarrollo":
+    if not origen_frontend.strip() and ajustes.es_desarrollo:
         origen_frontend = "http://localhost:5173"
     if origen_frontend.endswith("/"):
         origen_frontend = origen_frontend[:-1]

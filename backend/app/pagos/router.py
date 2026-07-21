@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencias import obtener_usuario_actual
 from app.core.base_de_datos import obtener_db
-from app.core import configuracion
+from app.core.configuracion import ajustes
 # Importamos los esquemas y las funciones del servicio
 from app.pagos.schemas import CheckoutEntrada, CheckoutRespuesta, PagoRespuesta
 from app.pagos.service import crear_checkout_session, procesar_webhook_stripe, _procesar_recarga_webhook
@@ -21,7 +21,7 @@ def crear_checkout_endpoint(
 ) -> CheckoutRespuesta:
     
     # 🌟 INTERCEPCIÓN EN MODO DESARROLLO (Bypass local directo)
-    if configuracion.settings.APP_ENV == "desarrollo":
+    if ajustes.es_desarrollo:
         # 1. Armamos el diccionario simulado imitando la estructura de Stripe
         objeto_simulado = {
             "amount_total": 2000,  # Representa $20.00 en tus pruebas
@@ -38,7 +38,7 @@ def crear_checkout_endpoint(
         db.commit()
         print(f"🚀 [Stripe Bypass Directo] Créditos sumados con éxito para el usuario ID: {usuario_actual.id}")
         
-        origen_frontend = request.headers.get("origin") or configuracion.settings.FRONTEND_URL
+        origen_frontend = request.headers.get("origin") or ajustes.frontend_url_base
         if origen_frontend.endswith("/"):
             origen_frontend = origen_frontend[:-1]
 
