@@ -8,12 +8,12 @@ type TarjetaResumenProps = {
 
 export function TarjetaResumen({ titulo, descripcion, contenido }: TarjetaResumenProps) {
   return (
-    <article className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-slate-950/30 backdrop-blur">
-      <div className="mb-4">
-        <h2 className="m-0 text-xl font-bold text-white">{titulo}</h2>
-        <p className="mt-2 text-sm text-slate-300">{descripcion}</p>
+    <div className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+      <div>
+        <h3 className="text-xl font-bold text-slate-900">{titulo}</h3>
+        <p className="mt-2 text-sm leading-relaxed text-slate-600">{descripcion}</p>
       </div>
-      <div>{contenido}</div>
-    </article>
+      {contenido && <div className="mt-6">{contenido}</div>}
+    </div>
   )
 }

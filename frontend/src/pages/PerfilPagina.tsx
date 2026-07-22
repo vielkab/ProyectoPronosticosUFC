@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { TarjetaResumen } from '../components/ui/TarjetaResumen'
 import { useAutenticacion } from '../hooks/useAutenticacion'
 import { eliminarMiCuenta, obtenerMiPerfil } from '../services/auth'
-import { obtenerMisEstadisticas } from '../services/apuestas' // Importamos el nuevo servicio
+import { obtenerMisEstadisticas } from '../services/apuestas'
 import { obtenerMensajeError } from '../utils/errores'
 
 export function PerfilPagina() {
@@ -18,7 +18,7 @@ export function PerfilPagina() {
     enabled: Boolean(sesion?.accessToken),
   })
 
-  // NUEVA: Consulta de aciertos y fallos de apuestas
+  // Consulta de aciertos y fallos de apuestas
   const consultaEstadisticas = useQuery({
     queryKey: ['estadisticas-apuestas'],
     queryFn: () => obtenerMisEstadisticas(sesion!.accessToken),
@@ -50,48 +50,48 @@ export function PerfilPagina() {
         titulo="Perfil del usuario"
         descripcion="Aquí mostraremos los datos del usuario autenticado y su rol."
         contenido={
-          <div className="space-y-2 text-slate-200">
-            <p><strong className="text-white">Usuario:</strong> {perfil?.nombre ?? 'Sin datos'}</p>
-            <p><strong className="text-white">Correo:</strong> {perfil?.correo ?? 'Sin datos'}</p>
-            <p><strong className="text-white">Rol:</strong> {perfil?.rol ?? 'Sin datos'}</p>
+          <div className="space-y-2 !text-slate-700">
+            <p><strong className="!text-slate-900">Usuario:</strong> {perfil?.nombre ?? 'Sin datos'}</p>
+            <p><strong className="!text-slate-900">Correo:</strong> {perfil?.correo ?? 'Sin datos'}</p>
+            <p><strong className="!text-slate-900">Rol:</strong> {perfil?.rol ?? 'Sin datos'}</p>
           </div>
         }
       />
 
-      {/* Tarjeta 2: NUEVO PANEL DE ACIERTOS Y FALLOS */}
+      {/* Tarjeta 2: PANEL DE ACIERTOS Y FALLOS */}
       <TarjetaResumen
         titulo="Panel de Pronósticos"
         descripcion="Rendimiento y estadísticas de tus apuestas virtuales de la UFC."
         contenido={
           consultaEstadisticas.isLoading ? (
-            <p className="text-slate-200">Cargando estadísticas...</p>
+            <p className="!text-slate-600">Cargando estadísticas...</p>
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2 text-center">
-                <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 p-3">
-                  <p className="text-xs text-emerald-400 font-medium uppercase tracking-wider">Aciertos</p>
-                  <p className="text-2xl font-bold text-emerald-300">{stats?.aciertos ?? 0}</p>
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                  <p className="text-xs font-bold uppercase tracking-wider !text-emerald-800">Aciertos</p>
+                  <p className="text-2xl font-black !text-emerald-700">{stats?.aciertos ?? 0}</p>
                 </div>
-                <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-3">
-                  <p className="text-xs text-rose-400 font-medium uppercase tracking-wider">Fallos</p>
-                  <p className="text-2xl font-bold text-rose-300">{stats?.fallos ?? 0}</p>
+                <div className="rounded-xl border border-red-200 bg-red-50 p-3">
+                  <p className="text-xs font-bold uppercase tracking-wider !text-red-800">Fallos</p>
+                  <p className="text-2xl font-black !text-red-700">{stats?.fallos ?? 0}</p>
                 </div>
               </div>
 
-              <div className="rounded-xl bg-slate-800/40 border border-slate-700/50 p-3 text-center">
-                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Efectividad (Win Rate)</p>
-                <p className="text-3xl font-extrabold text-indigo-400">{stats?.efectividad ?? 0}%</p>
+              <div className="rounded-xl border border-red-100 bg-red-50/50 p-3 text-center">
+                <p className="mb-1 text-xs font-bold uppercase tracking-wider !text-slate-600">Efectividad (Win Rate)</p>
+                <p className="text-3xl font-extrabold !text-red-700">{stats?.efectividad ?? 0}%</p>
               </div>
 
-              <div className="flex justify-between text-xs text-slate-400 px-1">
+              <div className="flex justify-between px-1 text-xs font-semibold !text-slate-500">
                 <span>Pendientes: {stats?.pendientes ?? 0}</span>
                 <span>Total Jugadas: {stats?.total_apuestas ?? 0}</span>
               </div>
 
-              {/* BOTÓN AGREGADO: Redirección al historial */}
+              {/* BOTÓN: Redirección al historial */}
               <button
                 onClick={() => navigate('/apuestas/historial')}
-                className="mt-2 w-full rounded-xl border border-indigo-500/40 bg-indigo-600/20 py-2.5 text-sm font-semibold text-indigo-200 transition hover:bg-indigo-600/40"
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-semibold !text-slate-800 shadow-sm transition hover:border-red-700 hover:!text-red-700"
                 type="button"
               >
                 Ver historial de apuestas
@@ -107,12 +107,14 @@ export function PerfilPagina() {
         descripcion="Protección de rutas y carga del perfil al iniciar sesión."
         contenido={
           <div className="space-y-4">
-            <p className="text-slate-200">Aquí puedes cerrar definitivamente tu cuenta.</p>
+            <p className="!text-slate-600">Aquí puedes cerrar definitivamente tu cuenta.</p>
             {mutacionEliminar.isError ? (
-              <p className="text-sm text-red-300">{obtenerMensajeError(mutacionEliminar.error, 'No se pudo eliminar la cuenta.')}</p>
+              <p className="text-sm font-medium !text-red-700">
+                {obtenerMensajeError(mutacionEliminar.error, 'No se pudo eliminar la cuenta.')}
+              </p>
             ) : null}
             <button
-              className="rounded-2xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-200 transition hover:bg-red-500/20"
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold !text-red-700 shadow-sm transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={mutacionEliminar.isPending}
               onClick={eliminarCuenta}
               type="button"

@@ -80,78 +80,104 @@ export function RegistroPagina() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-2xl rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 shadow-2xl backdrop-blur-md">
-      <h2 className="m-0 text-3xl font-black text-white">Crear cuenta</h2>
-      <p className="mt-3 text-slate-300">
+    <section className="mx-auto w-full max-w-2xl rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+      <h2 className="m-0 text-3xl font-black !text-slate-900">Crear cuenta</h2>
+      <p className="mt-3 !text-slate-600">
         Completa tus datos personales para verificar tu identidad y cumplir con las regulaciones de juego responsable (Juego 18+).
       </p>
 
       <form className="mt-8 grid gap-5 md:grid-cols-2" onSubmit={handleSubmit(enviarFormulario)}>
         <label className="flex flex-col gap-2 md:col-span-2">
-          <span className="text-sm font-medium text-slate-200">Usuario</span>
-          <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400 focus:bg-white/10" {...register('usuario')} placeholder="Ej. ufc_fan" />
-          {errors.usuario ? <span className="text-sm text-red-300">{errors.usuario.message}</span> : null}
+          <span className="text-sm font-semibold !text-slate-700">Usuario</span>
+          <input
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700 placeholder:text-slate-400"
+            {...register('usuario')}
+            placeholder="Ej. ufc_fan"
+          />
+          {errors.usuario ? <span className="text-sm font-medium !text-red-700">{errors.usuario.message}</span> : null}
         </label>
 
         <label className="flex flex-col gap-2 md:col-span-2">
-          <span className="text-sm font-medium text-slate-200">Correo Electrónico</span>
-          <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400 focus:bg-white/10" type="email" {...register('correo')} placeholder="correo@ejemplo.com" />
-          {errors.correo ? <span className="text-sm text-red-300">{errors.correo.message}</span> : null}
+          <span className="text-sm font-semibold !text-slate-700">Correo Electrónico</span>
+          <input
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700 placeholder:text-slate-400"
+            type="email"
+            {...register('correo')}
+            placeholder="correo@ejemplo.com"
+          />
+          {errors.correo ? <span className="text-sm font-medium !text-red-700">{errors.correo.message}</span> : null}
         </label>
 
         {/* Campos de Verificación de Edad e Identidad */}
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-slate-200">Número de Cédula / DNI</span>
-          <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400 focus:bg-white/10" {...register('cedula')} placeholder="Ej. 1712345678" />
-          {errors.cedula ? <span className="text-sm text-red-300">{errors.cedula.message}</span> : null}
+          <span className="text-sm font-semibold !text-slate-700">Número de Cédula / DNI</span>
+          <input
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700 placeholder:text-slate-400"
+            {...register('cedula')}
+            placeholder="Ej. 1712345678"
+          />
+          {errors.cedula ? <span className="text-sm font-medium !text-red-700">{errors.cedula.message}</span> : null}
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-slate-200">Fecha de Nacimiento</span>
-          <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400 focus:bg-white/10" type="date" {...register('fechaNacimiento')} />
-          {errors.fechaNacimiento ? <span className="text-sm text-red-300">{errors.fechaNacimiento.message}</span> : null}
+          <span className="text-sm font-semibold !text-slate-700">Fecha de Nacimiento</span>
+          <input
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700"
+            type="date"
+            {...register('fechaNacimiento')}
+          />
+          {errors.fechaNacimiento ? <span className="text-sm font-medium !text-red-700">{errors.fechaNacimiento.message}</span> : null}
         </label>
 
         <label className="flex flex-col gap-2 md:col-span-2">
-          <span className="text-sm font-medium text-slate-200">Método de Verificación Estudiantil (Simulado)</span>
-          <select className="rounded-2xl border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-red-400 focus:bg-white/10" {...register('metodoVerificacion')}>
+          <span className="text-sm font-semibold !text-slate-700">Método de Verificación Estudiantil (Simulado)</span>
+          <select
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700 cursor-pointer"
+            {...register('metodoVerificacion')}
+          >
             <option value="cedula_digital">Cédula Digital</option>
           </select>
-          {errors.metodoVerificacion ? <span className="text-sm text-red-300">{errors.metodoVerificacion.message}</span> : null}
+          {errors.metodoVerificacion ? <span className="text-sm font-medium !text-red-700">{errors.metodoVerificacion.message}</span> : null}
         </label>
 
         <CampoPassword etiqueta="Contraseña" error={errors.password?.message} registro={register('password')} placeholder="Ejemplo: Maria123" />
 
         <CampoPassword etiqueta="Confirmar contraseña" error={errors.confirmarPassword?.message} registro={register('confirmarPassword')} />
 
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300 md:col-span-2">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs font-medium !text-slate-600 md:col-span-2">
           Requisitos de contraseña: mínimo 8 caracteres, una mayúscula, una minúscula y un número.
         </div>
 
-        {/* Declaraciones Juradas y Aceptación de Términos (Cumplimiento de Casas de Apuestas Reales) */}
-        <label className="flex items-start gap-3 rounded-2xl border border-red-500/20 bg-red-950/20 p-4 md:col-span-2">
-          <input className="mt-1 h-5 w-5 rounded border-white/10 bg-white/5 text-red-600 transition" type="checkbox" {...register('aceptaTerminos')} />
+        {/* Declaraciones Juradas y Aceptación de Términos */}
+        <label className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/50 p-4 md:col-span-2 cursor-pointer">
+          <input
+            className="mt-1 h-5 w-5 rounded border-slate-300 text-red-700 accent-red-700 transition"
+            type="checkbox"
+            {...register('aceptaTerminos')}
+          />
           <div className="flex flex-col">
-            <span className="text-sm font-medium text-slate-200">Declaración de Responsabilidad de Juego</span>
-            <span className="mt-1 text-xs leading-normal text-slate-400">
+            <span className="text-sm font-bold !text-slate-900">Declaración de Responsabilidad de Juego</span>
+            <span className="mt-1 text-xs leading-normal !text-slate-600">
               Declaro bajo juramento que soy mayor de 18 años, que los datos ingresados coinciden con mi documento oficial,
               no tengo una autoexclusión de juego activa y no soy una Persona Expuesta Políticamente (PEP). Acepto los Términos y Condiciones.
             </span>
-            {errors.aceptaTerminos ? <span className="mt-1 text-sm text-red-300">{errors.aceptaTerminos.message}</span> : null}
+            {errors.aceptaTerminos ? <span className="mt-1.5 text-sm font-medium !text-red-700">{errors.aceptaTerminos.message}</span> : null}
           </div>
         </label>
 
         {mutacionRegistro.isError ? (
-          <span className="text-sm text-red-300 md:col-span-2">
-            {obtenerMensajeError(
-              mutacionRegistro.error,
-              'No se pudo completar el registro.',
-            )}
-          </span>
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4 md:col-span-2">
+            <span className="text-sm font-medium !text-red-700">
+              {obtenerMensajeError(
+                mutacionRegistro.error,
+                'No se pudo completar el registro.',
+              )}
+            </span>
+          </div>
         ) : null}
 
         <button
-          className="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
+          className="rounded-2xl bg-red-700 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-70 md:col-span-2"
           disabled={mutacionRegistro.isPending}
           type="submit"
         >

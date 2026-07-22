@@ -10,19 +10,19 @@ import { formatearMoneda } from '../utils/formatos'
 export function BilleteraPagina() {
   const { autenticado, sesion, cerrarSesion } = useAutenticacion()
   const [searchParams, setSearchParams] = useSearchParams()
-  
+
   // Estados de la billetera
   const [saldo, setSaldo] = useState<number>(0)
   const [moneda, setMoneda] = useState<string>('USD')
   const [recientes, setRecientes] = useState<RecargaHistorial[]>([])
   const [perfil, setPerfil] = useState<PerfilUsuario | null>(null)
-  
+
   // Estados de carga y error
   const [cargando, setCargando] = useState(true)
   const [procesandoConfirmacion, setProcesandoConfirmacion] = useState(false)
   const [error, setError] = useState('')
   const [mensajeExito, setMensajeExito] = useState('')
-  
+
   // Estados del formulario de recarga
   const [montoRecarga, setMontoRecarga] = useState<number>(20)
   const [customMonto, setCustomMonto] = useState<string>('')
@@ -41,7 +41,7 @@ export function BilleteraPagina() {
         setSaldo(datosBilletera.saldo)
         setMoneda(datosBilletera.moneda)
         setRecientes(datosBilletera.recientes || [])
-        
+
         const datosPerfil = await obtenerMiPerfil(sesion.accessToken)
         setPerfil(datosPerfil)
       } catch (err) {
@@ -73,7 +73,7 @@ export function BilleteraPagina() {
         setProcesandoConfirmacion(true)
         setError('')
         setMensajeExito('Confirmando recarga con Stripe...')
-        
+
         try {
           // Llamar al backend para validar la sesión y acreditar créditos
           const datosActualizados = await confirmarRecarga(sesion.accessToken, sessionId)
@@ -98,7 +98,7 @@ export function BilleteraPagina() {
     }
 
     confirmarPagoStripe()
-  }, [searchParams, setSearchParams, sesion?.accessToken])
+  }, [searchParams, setSearchParams, sesion?.accessToken, procesandoConfirmacion])
 
   const manejarMontoPredefinido = (valor: number) => {
     setMontoRecarga(valor)
@@ -140,8 +140,8 @@ export function BilleteraPagina() {
       }
     } catch (err: any) {
       setError(
-        err.response?.data?.detail || 
-        'Ocurrió un error al procesar tu recarga. Revisa la consola o configuración de variables.'
+        err.response?.data?.detail ||
+          'Ocurrió un error al procesar tu recarga. Revisa la consola o configuración de variables.'
       )
     } finally {
       setProcesandoRecarga(false)
@@ -151,18 +151,23 @@ export function BilleteraPagina() {
   if (cargando) {
     return (
       <div className="flex min-h-[400px] w-full items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-red-500 border-t-transparent"></div>
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-red-700 border-t-transparent"></div>
       </div>
     )
   }
 
   if (!autenticado) {
     return (
-      <div className="mx-auto max-w-lg rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 text-center shadow-xl backdrop-blur-md">
-        <h2 className="text-2xl font-black text-white">Mi Billetera</h2>
-        <p className="mt-4 text-slate-300">Debes iniciar sesión para poder gestionar tu saldo de créditos virtuales y realizar recargas.</p>
+      <div className="mx-auto max-w-lg rounded-[2rem] border border-slate-200 bg-white p-8 text-center shadow-sm">
+        <h2 className="text-2xl font-black !text-slate-900">Mi Billetera</h2>
+        <p className="mt-4 !text-slate-600">
+          Debes iniciar sesión para poder gestionar tu saldo de créditos virtuales y realizar recargas.
+        </p>
         <div className="mt-6">
-          <Link className="inline-block rounded-2xl bg-red-500 px-6 py-3 font-semibold text-white transition hover:bg-red-400" to="/iniciar-sesion">
+          <Link
+            className="inline-block rounded-2xl bg-red-700 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-red-800"
+            to="/iniciar-sesion"
+          >
             Iniciar Sesión
           </Link>
         </div>
@@ -173,18 +178,18 @@ export function BilleteraPagina() {
   return (
     <div className="w-full space-y-6">
       <div>
-        <h1 className="text-3xl font-black text-white">Mi Billetera Virtual</h1>
-        <p className="text-sm text-slate-400">Gestiona tu saldo de créditos para realizar pronósticos de eventos UFC.</p>
+        <h1 className="text-3xl font-black !text-slate-900">Mi Billetera Virtual</h1>
+        <p className="text-sm !text-slate-600">Gestiona tu saldo de créditos para realizar pronósticos de eventos UFC.</p>
       </div>
 
       {mensajeExito && (
-        <div className="rounded-2xl border border-green-500/30 bg-green-950/30 p-4 text-sm font-medium text-green-300 animate-pulse">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold !text-emerald-800 animate-pulse">
           {mensajeExito}
         </div>
       )}
 
       {error && (
-        <div className="rounded-2xl border border-red-500/30 bg-red-950/30 p-4 text-sm font-medium text-red-300">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium !text-red-700">
           {error}
         </div>
       )}
@@ -193,69 +198,68 @@ export function BilleteraPagina() {
         {/* Columna Izquierda: Información de Saldo y Verificación */}
         <div className="space-y-6 lg:col-span-5">
           {/* Tarjeta de Saldo */}
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-gradient-to-br from-slate-900 to-slate-950 p-8 shadow-xl">
+          <div className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-900 p-8 text-white shadow-md">
             {/* Efecto de resplandor */}
-            <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-red-600/10 blur-[50px]"></div>
-            
+            <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-red-600/20 blur-[50px]"></div>
+
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Saldo Disponible</p>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-5xl font-black tracking-tight text-white bg-gradient-to-r from-red-500 to-yellow-500 bg-clip-text text-transparent">
+              <span className="text-5xl font-black tracking-tight text-white bg-gradient-to-r from-red-400 to-amber-400 bg-clip-text text-transparent">
                 {formatearMoneda(saldo)}
               </span>
               <span className="text-sm font-bold text-slate-400">{moneda}</span>
             </div>
-            <p className="mt-4 text-xs text-slate-400">
-              Créditos Recargados.
-            </p>
+            <p className="mt-4 text-xs text-slate-400">Créditos Recargados.</p>
           </div>
 
           {/* Tarjeta de Verificación de Identidad */}
-          <div className="rounded-[2rem] border border-white/10 bg-slate-900/40 p-6 shadow-lg backdrop-blur-sm">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500/20 text-green-400 text-xs">✓</span>
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-bold !text-slate-900 flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">
+                ✓
+              </span>
               Verificación de Identidad (18+)
             </h3>
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs !text-slate-600">
               Datos registrados requeridos por regulaciones de juego responsable.
             </p>
 
-            <div className="mt-4 space-y-3 rounded-2xl bg-white/5 p-4 text-sm text-slate-300">
-              <div className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-slate-400">Cédula / Identificación:</span>
-                <span className="font-semibold text-white">{perfil?.cedula || 'No registrada'}</span>
+            <div className="mt-4 space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm !text-slate-700">
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="!text-slate-500">Cédula / Identificación:</span>
+                <span className="font-semibold !text-slate-900">{perfil?.cedula || 'No registrada'}</span>
               </div>
-              <div className="flex justify-between border-b border-white/5 pb-2">
-                <span className="text-slate-400">Fecha de Nacimiento:</span>
-                <span className="font-semibold text-white">
-                  {perfil?.fecha_nacimiento 
+              <div className="flex justify-between border-b border-slate-200 pb-2">
+                <span className="!text-slate-500">Fecha de Nacimiento:</span>
+                <span className="font-semibold !text-slate-900">
+                  {perfil?.fecha_nacimiento
                     ? new Date(perfil.fecha_nacimiento).toLocaleDateString('es-ES', {
                         day: '2-digit',
                         month: 'long',
-                        year: 'numeric'
-                      }) 
+                        year: 'numeric',
+                      })
                     : 'No registrada'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-400">Declaración Jurada Edad:</span>
-                <span className="font-semibold text-green-400">Confirmada (18+)</span>
+                <span className="!text-slate-500">Declaración Jurada Edad:</span>
+                <span className="font-semibold !text-emerald-700">Confirmada (18+)</span>
               </div>
             </div>
           </div>
-
         </div>
 
         {/* Columna Derecha: Recarga y Historial Reciente */}
         <div className="space-y-6 lg:col-span-7">
           {/* Panel de Recarga */}
-          <div className="rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 shadow-xl backdrop-blur-md">
-            <h2 className="text-xl font-bold text-white">Recargar Créditos</h2>
-            <p className="text-sm text-slate-300 mt-1">Elige un monto para iniciar tu pago en Stripe Sandbox.</p>
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-xl font-bold !text-slate-900">Recargar Créditos</h2>
+            <p className="text-sm !text-slate-600 mt-1">Elige un monto para iniciar tu pago en Stripe Sandbox.</p>
 
             <form onSubmit={iniciarPagoStripe} className="mt-6 space-y-6">
               {/* Selección de Monto */}
               <div>
-                <label className="text-sm font-medium text-slate-200">Monto de la recarga</label>
+                <label className="text-sm font-semibold !text-slate-700">Monto de la recarga</label>
                 <div className="mt-3 grid grid-cols-4 gap-3">
                   {[10, 20, 50, 100].map((valor) => (
                     <button
@@ -264,8 +268,8 @@ export function BilleteraPagina() {
                       onClick={() => manejarMontoPredefinido(valor)}
                       className={`rounded-2xl py-3 font-bold transition ${
                         montoRecarga === valor && !customMonto
-                          ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
-                          : 'border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                          ? 'bg-red-700 text-white shadow-md shadow-red-700/20'
+                          : 'border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
                       }`}
                     >
                       ${valor}
@@ -274,14 +278,14 @@ export function BilleteraPagina() {
                 </div>
 
                 <div className="mt-4">
-                  <span className="text-xs text-slate-400 block mb-2">O ingresa un monto personalizado (USD)</span>
+                  <span className="text-xs !text-slate-500 block mb-2">O ingresa un monto personalizado (USD)</span>
                   <input
                     type="number"
                     min="1"
                     step="any"
                     value={customMonto}
                     onChange={manejarMontoCustomChange}
-                    className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400 focus:bg-white/10"
+                    className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700 placeholder:text-slate-400"
                     placeholder="Monto personalizado"
                   />
                 </div>
@@ -291,7 +295,7 @@ export function BilleteraPagina() {
               <button
                 type="submit"
                 disabled={procesandoRecarga || procesandoConfirmacion}
-                className="w-full rounded-2xl bg-red-500 py-4 font-bold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-75 flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
+                className="w-full rounded-2xl bg-red-700 py-4 font-bold text-white transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-75 flex items-center justify-center gap-2 shadow-sm"
               >
                 {procesandoRecarga ? (
                   <>
@@ -306,38 +310,38 @@ export function BilleteraPagina() {
           </div>
 
           {/* Historial de Recargas Recientes */}
-          <div className="rounded-[2rem] border border-white/10 bg-slate-900/20 p-6 shadow-xl backdrop-blur-sm">
-            <h3 className="text-lg font-bold text-white mb-4">Historial de Recargas Recientes</h3>
-            
+          <div className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-bold !text-slate-900 mb-4">Historial de Recargas Recientes</h3>
+
             {recientes.length === 0 ? (
-              <p className="text-sm text-slate-400 py-4 text-center">No hay recargas registradas recientemente.</p>
+              <p className="text-sm !text-slate-500 py-4 text-center">No hay recargas registradas recientemente.</p>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-white/5 bg-slate-950/40">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-white/5 bg-white/5 text-xs font-bold uppercase tracking-wider text-slate-400">
+                    <tr className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider !text-slate-500">
                       <th className="px-4 py-3">Fecha</th>
                       <th className="px-4 py-3">Monto</th>
                       <th className="px-4 py-3 text-right">Estado</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/5 text-slate-300">
+                  <tbody className="divide-y divide-slate-100 !text-slate-700">
                     {recientes.map((recarga, index) => (
-                      <tr key={index} className="hover:bg-white/5 transition">
+                      <tr key={index} className="hover:bg-slate-50 transition">
                         <td className="px-4 py-3.5">
                           {new Date(recarga.creado_en).toLocaleDateString('es-ES', {
                             day: '2-digit',
                             month: '2-digit',
                             year: 'numeric',
                             hour: '2-digit',
-                            minute: '2-digit'
+                            minute: '2-digit',
                           })}
                         </td>
-                        <td className="px-4 py-3.5 font-bold text-white">
+                        <td className="px-4 py-3.5 font-bold !text-slate-900">
                           {formatearMoneda(recarga.monto)}
                         </td>
                         <td className="px-4 py-3.5 text-right">
-                          <span className="inline-flex rounded-full bg-green-500/10 px-2.5 py-0.5 text-xs font-semibold leading-5 text-green-400">
+                          <span className="inline-flex rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold leading-5 !text-emerald-800">
                             {recarga.estado}
                           </span>
                         </td>
@@ -347,7 +351,7 @@ export function BilleteraPagina() {
                 </table>
               </div>
             )}
-            <p className="text-slate-500 text-[10px] mt-3 leading-normal">
+            <p className="!text-slate-500 text-[10px] mt-3 leading-normal">
               * Se almacenan las últimas 5 recargas más recientes de tu billetera.
             </p>
           </div>

@@ -62,20 +62,9 @@ export function PrediccionesPagina() {
     cargar()
   }, [])
 
-  // function cuotaParaPeleador(prediccion: PrediccionCombate, peleaId: number, peleadorId: number, pelea: PeleaCarteleraResumen): number {
-  //   const verPronostico = formularios[peleaId]?.verPronostico ?? false
-  //   const esRojo = peleadorId === -1 ? true : peleadorId === pelea.id // placeholder
-  //   if (verPronostico) {
-  //     return peleadorId === -1 ? 0 : (prediccion.cuota_rojo_con_pronostico)
-  //   }
-  //   return peleadorId === -1 ? 0 : prediccion.cuota_rojo
-  // }
-
   function getCuota(pelea: PeleaCarteleraResumen, peleadorSeleccionadoId: number, verPronostico: boolean): number {
     const pred = predicciones[pelea.id]
     if (!pred) return 1.8
-    // Necesitamos saber si el peleador seleccionado es rojo o azul
-    // La información de IDs está en la predicción
     const esRojo = peleadorSeleccionadoId === pred.peleador_rojo_id
     const cuotaBase = esRojo ? pred.cuota_rojo : pred.cuota_azul
     return verPronostico ? (esRojo ? pred.cuota_rojo_con_pronostico : pred.cuota_azul_con_pronostico) : cuotaBase
@@ -87,7 +76,6 @@ export function PrediccionesPagina() {
       return
     }
     const form = formularios[pelea.id]
-    // const pred = predicciones[pelea.id]
     if (!form || form.peleadorId === -1) {
       setErrores(prev => ({ ...prev, [pelea.id]: 'Selecciona un peleador.' }))
       return
@@ -131,27 +119,29 @@ export function PrediccionesPagina() {
   return (
     <div className="flex w-full flex-col gap-6">
       <header>
-        <h2 className="m-0 text-3xl font-black text-white">Pronósticos y apuestas</h2>
-        <p className="mt-3 max-w-2xl text-slate-300">
+        <h2 className="m-0 text-3xl font-black !text-slate-900">Pronósticos y apuestas</h2>
+        <p className="mt-3 max-w-2xl !text-slate-600">
           Cada pelea tiene una predicción estadística. Puedes ver el pronóstico detallado antes de apostar,
           pero hacerlo reduce tu cuota un 10%.
         </p>
       </header>
 
       {!autenticado && (
-        <div className="flex flex-wrap gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-          <p className="w-full text-sm text-slate-300">Inicia sesión para poder apostar.</p>
-          <Link className="inline-flex rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400" to="/iniciar-sesion">
-            Iniciar sesión
-          </Link>
-          <Link className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white hover:border-red-400/60" to="/registro">
-            Registrarse
-          </Link>
+        <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p className="w-full text-sm font-medium !text-slate-700 sm:w-auto sm:flex-1">Inicia sesión para poder apostar.</p>
+          <div className="flex gap-2">
+            <Link className="inline-flex rounded-full bg-red-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-800" to="/iniciar-sesion">
+              Iniciar sesión
+            </Link>
+            <Link className="inline-flex rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold !text-slate-700 transition hover:bg-slate-50" to="/registro">
+              Registrarse
+            </Link>
+          </div>
         </div>
       )}
 
-      {cargando && <p className="text-slate-300">Cargando peleas...</p>}
-      {!cargando && peleas.length === 0 && <p className="text-slate-400">No hay peleas disponibles por el momento.</p>}
+      {cargando && <p className="!text-slate-600">Cargando peleas...</p>}
+      {!cargando && peleas.length === 0 && <p className="!text-slate-500">No hay peleas disponibles por el momento.</p>}
 
       <section className="grid gap-6 xl:grid-cols-2">
         {peleas.map(pelea => {
@@ -172,15 +162,15 @@ export function PrediccionesPagina() {
                   {/* Cuotas base */}
                   {pred && (
                     <div className="grid grid-cols-2 gap-2 text-center text-sm">
-                      <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-2">
-                        <p className="font-semibold text-red-300">{pelea.peleador_rojo_nombre}</p>
-                        <p className="text-xs text-slate-400">{pred.probabilidad_rojo}% prob.</p>
-                        <p className="text-lg font-black text-white">×{pred.cuota_rojo}</p>
+                      <div className="rounded-xl border border-red-200 bg-red-50/80 p-2.5">
+                        <p className="font-bold !text-red-800">{pelea.peleador_rojo_nombre}</p>
+                        <p className="text-xs font-medium !text-slate-500">{pred.probabilidad_rojo}% prob.</p>
+                        <p className="mt-1 text-lg font-black !text-red-700">×{pred.cuota_rojo}</p>
                       </div>
-                      <div className="rounded-xl border border-blue-500/20 bg-blue-500/10 p-2">
-                        <p className="font-semibold text-blue-300">{pelea.peleador_azul_nombre}</p>
-                        <p className="text-xs text-slate-400">{pred.probabilidad_azul}% prob.</p>
-                        <p className="text-lg font-black text-white">×{pred.cuota_azul}</p>
+                      <div className="rounded-xl border border-blue-200 bg-blue-50/80 p-2.5">
+                        <p className="font-bold !text-blue-800">{pelea.peleador_azul_nombre}</p>
+                        <p className="text-xs font-medium !text-slate-500">{pred.probabilidad_azul}% prob.</p>
+                        <p className="mt-1 text-lg font-black !text-blue-700">×{pred.cuota_azul}</p>
                       </div>
                     </div>
                   )}
@@ -188,27 +178,27 @@ export function PrediccionesPagina() {
                   {/* Botón ver pronóstico */}
                   {pred && (
                     <button
-                      className="rounded-xl border border-white/10 px-3 py-2 text-left text-xs text-slate-300 transition hover:border-white/30 hover:text-white"
+                      className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-semibold !text-slate-700 transition hover:border-slate-300 hover:bg-slate-100"
                       type="button"
                       onClick={() => togglePronostico(pelea.id)}
                     >
-                      {pronosticoVisible ? '▲ Ocultar pronóstico detallado' : '▼ Ver pronóstico detallado'}
-                      <span className="ml-2 rounded-full bg-yellow-500/20 px-2 py-0.5 text-yellow-300">−10% cuota si apuestas</span>
+                      <span>{pronosticoVisible ? '▲ Ocultar pronóstico detallado' : '▼ Ver pronóstico detallado'}</span>
+                      <span className="rounded-full bg-amber-100 px-2 py-0.5 font-bold text-amber-800">−10% cuota si apuestas</span>
                     </button>
                   )}
 
                   {/* Detalle pronóstico */}
                   {pred && pronosticoVisible && (
-                    <div className="rounded-xl border border-white/5 bg-white/5 p-3 text-xs text-slate-300">
-                      <p className="mb-2 font-semibold text-white">{pred.explicacion}</p>
-                      <ul className="flex flex-col gap-1">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs !text-slate-700">
+                      <p className="mb-2 font-bold !text-slate-900">{pred.explicacion}</p>
+                      <ul className="flex flex-col gap-1.5">
                         {pred.factores.map(f => (
-                          <li key={f.nombre} className="flex justify-between">
-                            <span className="text-slate-400 capitalize">{f.nombre.replace(/_/g, ' ')}</span>
-                            <span>
-                              <span className="text-red-300">{f.peleador_rojo}</span>
-                              <span className="mx-1 text-slate-500">vs</span>
-                              <span className="text-blue-300">{f.peleador_azul}</span>
+                          <li key={f.nombre} className="flex justify-between border-b border-slate-200/60 pb-1 last:border-0 last:pb-0">
+                            <span className="font-medium !text-slate-500 capitalize">{f.nombre.replace(/_/g, ' ')}</span>
+                            <span className="font-semibold">
+                              <span className="!text-red-700">{f.peleador_rojo}</span>
+                              <span className="mx-1 font-normal !text-slate-400">vs</span>
+                              <span className="!text-blue-700">{f.peleador_azul}</span>
                             </span>
                           </li>
                         ))}
@@ -218,17 +208,25 @@ export function PrediccionesPagina() {
 
                   {/* Formulario apuesta */}
                   {autenticado && form && (
-                    <div className="flex flex-col gap-3 border-t border-white/5 pt-3">
+                    <div className="flex flex-col gap-3 border-t border-slate-200 pt-3">
                       <div className="grid grid-cols-2 gap-2">
                         <button
-                          className={`rounded-xl border px-3 py-2 text-sm transition ${form.peleadorId === pred?.peleador_rojo_id ? 'border-red-500 bg-red-500/20 font-semibold text-red-300' : 'border-white/10 text-slate-300 hover:border-white/30'}`}
+                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                            form.peleadorId === pred?.peleador_rojo_id
+                              ? 'border-red-600 bg-red-50 !text-red-700 ring-1 ring-red-600'
+                              : 'border-slate-300 bg-white !text-slate-700 hover:border-slate-400'
+                          }`}
                           type="button"
                           onClick={() => actualizarForm(pelea.id, { peleadorId: pred?.peleador_rojo_id ?? -1 })}
                         >
                           {pelea.peleador_rojo_nombre}
                         </button>
                         <button
-                          className={`rounded-xl border px-3 py-2 text-sm transition ${form.peleadorId === pred?.peleador_azul_id ? 'border-blue-500 bg-blue-500/20 font-semibold text-blue-300' : 'border-white/10 text-slate-300 hover:border-white/30'}`}
+                          className={`rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                            form.peleadorId === pred?.peleador_azul_id
+                              ? 'border-blue-600 bg-blue-50 !text-blue-700 ring-1 ring-blue-600'
+                              : 'border-slate-300 bg-white !text-slate-700 hover:border-slate-400'
+                          }`}
                           type="button"
                           onClick={() => actualizarForm(pelea.id, { peleadorId: pred?.peleador_azul_id ?? -1 })}
                         >
@@ -237,9 +235,9 @@ export function PrediccionesPagina() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="text-sm text-slate-400">Monto:</span>
+                        <span className="text-sm font-semibold !text-slate-600">Monto:</span>
                         <input
-                          className="flex-1 rounded-xl border border-white/10 bg-slate-800 px-3 py-2 text-sm text-white outline-none focus:border-red-400"
+                          className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700"
                           min="1"
                           placeholder="10.00"
                           step="0.01"
@@ -250,39 +248,39 @@ export function PrediccionesPagina() {
                       </div>
 
                       {pred && (
-                        <label className="flex cursor-pointer items-center gap-2 text-sm">
+                        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium !text-slate-700">
                           <input
                             checked={form.verPronostico}
-                            className="accent-red-500"
+                            className="h-4 w-4 rounded accent-red-700"
                             type="checkbox"
                             onChange={e => actualizarForm(pelea.id, { verPronostico: e.target.checked })}
                           />
-                          <span className="text-slate-300">
+                          <span>
                             Usar pronóstico al apostar
-                            <span className="ml-1 text-xs text-yellow-400">(cuota −10%)</span>
+                            <span className="ml-1 text-xs font-bold text-amber-700">(cuota −10%)</span>
                           </span>
                         </label>
                       )}
 
                       {pred && form.peleadorId !== -1 && (
-                        <div className="rounded-xl border border-white/5 bg-white/5 px-3 py-2 text-xs text-slate-300">
-                          Cuota: <span className="font-bold text-white">×{cuotaActual}</span>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium !text-slate-700">
+                          Cuota: <span className="font-bold !text-slate-900">×{cuotaActual}</span>
                           {form.monto && Number(form.monto) > 0 && cuotaActual && (
-                            <> · Ganancia potencial: <span className="font-bold text-emerald-300">{formatearMoneda(Number(form.monto) * cuotaActual)}</span></>
+                            <> · Ganancia potencial: <span className="font-extrabold !text-emerald-700">{formatearMoneda(Number(form.monto) * cuotaActual)}</span></>
                           )}
-                          {form.verPronostico && <span className="ml-2 text-yellow-400">Cuota reducida por ver pronóstico</span>}
+                          {form.verPronostico && <span className="ml-2 font-semibold text-amber-700">(Cuota reducida por pronóstico)</span>}
                         </div>
                       )}
 
                       {mensajes[pelea.id] && (
-                        <p className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-2 text-xs text-emerald-200">{mensajes[pelea.id]}</p>
+                        <p className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-xs font-semibold !text-emerald-800">{mensajes[pelea.id]}</p>
                       )}
                       {errores[pelea.id] && (
-                        <p className="rounded-lg border border-red-400/30 bg-red-500/10 p-2 text-xs text-red-200">{errores[pelea.id]}</p>
+                        <p className="rounded-lg border border-red-200 bg-red-50 p-2 text-xs font-semibold !text-red-700">{errores[pelea.id]}</p>
                       )}
 
                       <button
-                        className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-xl bg-red-700 py-2.5 text-sm font-bold text-white shadow transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={form.peleadorId === -1 || !form.monto || Number(form.monto) <= 0}
                         type="button"
                         onClick={() => apostar(pelea)}

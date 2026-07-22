@@ -39,10 +39,10 @@ export function InicioPagina() {
           descripcion="La parte principal del producto es pública para que el usuario conozca la plataforma antes de registrarse."
           contenido={
             <div className="flex flex-wrap gap-3">
-              <Link className="inline-flex rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400" to="/eventos">
+              <Link className="inline-flex rounded-full bg-red-700 px-4 py-2 text-sm font-semibold !text-white shadow-sm transition hover:bg-red-800" to="/eventos">
                 Ir a carteleras
               </Link>
-              <Link className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-red-400/60" to="/peleadores">
+              <Link className="inline-flex rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold !text-slate-700 shadow-sm transition hover:border-red-700 hover:!text-red-700" to="/peleadores">
                 Explorar peleadores
               </Link>
             </div>
@@ -54,10 +54,10 @@ export function InicioPagina() {
           descripcion="El registro se activa por correo y permite apostar, revisar historial, administrar saldo y acceder al panel administrador si corresponde."
           contenido={
             <div className="flex flex-wrap gap-3">
-              <Link className="inline-flex rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:border-red-400/60" to="/iniciar-sesion">
+              <Link className="inline-flex rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold !text-slate-700 shadow-sm transition hover:border-red-700 hover:!text-red-700" to="/iniciar-sesion">
                 Iniciar sesión
               </Link>
-              <Link className="inline-flex rounded-full bg-black px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-100" to="/registro">
+              <Link className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold !text-white shadow-sm transition hover:bg-slate-800" to="/registro">
                 Crear cuenta
               </Link>
             </div>
@@ -72,7 +72,7 @@ export function InicioPagina() {
             titulo={modulo.titulo}
             descripcion={modulo.descripcion}
             contenido={
-              <Link className="inline-flex rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400" to={modulo.enlace}>
+              <Link className="inline-flex rounded-full bg-red-700 px-4 py-2 text-sm font-semibold !text-white shadow-sm transition hover:bg-red-800" to={modulo.enlace}>
                 {modulo.boton}
               </Link>
             }

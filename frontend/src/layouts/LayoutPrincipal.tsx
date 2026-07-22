@@ -13,8 +13,8 @@ const enlacesPublicos = [
 
 function obtenerClasesEnlace(activo: boolean): string {
   return activo
-    ? 'rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-500/30'
-    : 'rounded-full border border-white/10 px-4 py-2 text-sm text-slate-200 transition hover:border-red-400/60 hover:text-white'
+    ? 'rounded-full bg-red-700 px-4 py-2 text-sm font-semibold !text-white shadow-sm'
+    : 'rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium !text-slate-600 transition hover:border-red-700 hover:!text-red-700 shadow-sm'
 }
 
 export function LayoutPrincipal() {
@@ -22,12 +22,12 @@ export function LayoutPrincipal() {
 
   return (
     <div className="min-h-screen">
-      <header className="border-b border-white/10 bg-slate-950/70 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 px-5 py-6 lg:px-8">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm uppercase tracking-[0.35em] text-red-300">PronoStats UFC</p>
-              <h1 className="m-0 text-3xl font-black tracking-tight text-white">
+              <p className="text-sm font-bold uppercase tracking-[0.35em] text-red-700">PronoStats UFC</p>
+              <h1 className="m-0 text-3xl font-black tracking-tight text-slate-900">
                 Estadísticas, carteleras y apuestas virtuales de UFC
               </h1>
             </div>
@@ -35,11 +35,11 @@ export function LayoutPrincipal() {
             <div className="flex flex-wrap gap-3">
               {autenticado && sesion ? (
                 <>
-                  <NavLink className="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-red-400/60" to="/perfil">
+                  <NavLink className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-red-700 hover:text-red-700" to="/perfil">
                     {sesion.usuario.nombre}
                   </NavLink>
                   <button
-                    className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-100"
+                    className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
                     onClick={cerrarSesion}
                     type="button"
                   >
@@ -48,10 +48,10 @@ export function LayoutPrincipal() {
                 </>
               ) : (
                 <>
-                  <NavLink className="rounded-full border border-white/10 px-4 py-2 text-sm font-medium text-white transition hover:border-red-400/60" to="/iniciar-sesion">
+                  <NavLink className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-red-700 hover:text-red-700" to="/iniciar-sesion">
                     Iniciar sesión
                   </NavLink>
-                  <NavLink className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-red-100" to="/registro">
+                  <NavLink className="rounded-full bg-red-700 px-4 py-2 text-sm font-semibold !text-white shadow-sm transition hover:bg-red-800" to="/registro">
                     Registrarse
                   </NavLink>
                 </>

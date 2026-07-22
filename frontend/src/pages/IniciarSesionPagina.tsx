@@ -73,26 +73,26 @@ export function IniciarSesionPagina() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-xl rounded-[2rem] border border-white/10 bg-slate-950/70 p-8">
-      <h2 className="m-0 text-3xl font-black text-white">Iniciar sesión</h2>
-      <p className="mt-3 text-slate-300">Accede con tu usuario y la contraseña de tu cuenta verificada.</p>
+    <section className="mx-auto w-full max-w-xl rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+      <h2 className="m-0 text-3xl font-black !text-slate-900">Iniciar sesión</h2>
+      <p className="mt-3 !text-slate-600">Accede con tu usuario y la contraseña de tu cuenta verificada.</p>
 
       <form className="mt-8 flex flex-col gap-5" onSubmit={handleSubmit(enviarFormulario)}>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-slate-200">Usuario</span>
+          <span className="text-sm font-semibold !text-slate-700">Usuario</span>
           <input
-            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400"
+            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700"
             {...register('usuario')}
           />
-          {errors.usuario ? <span className="text-sm text-red-300">{errors.usuario.message}</span> : null}
+          {errors.usuario ? <span className="text-sm font-medium !text-red-700">{errors.usuario.message}</span> : null}
         </label>
 
         <CampoPassword etiqueta="Contraseña" error={errors.password?.message} registro={register('password')} />
 
-        <div className="flex items-center justify-between gap-4 text-sm">
-          <span className="text-slate-400">Tu correo debe estar verificado para poder entrar.</span>
+        <div className="flex flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <span className="!text-slate-500">Tu correo debe estar verificado para poder entrar.</span>
           <button
-            className="font-medium text-red-300 transition hover:text-red-200"
+            className="self-start font-semibold !text-red-700 transition hover:underline sm:self-auto"
             onClick={irARecuperarPassword}
             type="button"
           >
@@ -101,16 +101,18 @@ export function IniciarSesionPagina() {
         </div>
 
         {mutacionLogin.isError ? (
-          <span className="text-sm text-red-300">
-            {obtenerMensajeError(
-              mutacionLogin.error,
-              'Usuario o contraseña incorrecta.',
-            )}
-          </span>
+          <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+            <span className="text-sm font-medium !text-red-700">
+              {obtenerMensajeError(
+                mutacionLogin.error,
+                'Usuario o contraseña incorrecta.',
+              )}
+            </span>
+          </div>
         ) : null}
 
         <button
-          className="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-70"
+          className="rounded-2xl bg-red-700 px-5 py-3 font-semibold !text-white shadow-sm transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-70"
           disabled={mutacionLogin.isPending || mutacionRecuperacion.isPending}
           type="submit"
         >

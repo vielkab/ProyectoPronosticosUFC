@@ -39,13 +39,13 @@ export function AdminPagina() {
   return (
     <div className="flex w-full flex-col gap-6">
       <header>
-        <h2 className="m-0 text-3xl font-black text-white">Resumen operativo</h2>
-        <p className="mt-2 text-slate-400">Métricas del MVP y sincronización de datos MMA.</p>
+        <h2 className="m-0 text-3xl font-black text-slate-900">Resumen operativo</h2>
+        <p className="mt-2 text-slate-600">Métricas del MVP y sincronización de datos MMA.</p>
       </header>
 
       <div className="flex flex-wrap gap-3">
         <button
-          className="rounded-full bg-red-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={sincronizando}
           type="button"
           onClick={sincronizar}
@@ -54,17 +54,50 @@ export function AdminPagina() {
         </button>
       </div>
 
-      {mensaje && <p className="rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-4 text-emerald-100">{mensaje}</p>}
-      {error && <p className="rounded-lg border border-red-400/30 bg-red-500/10 p-4 text-red-100">{error}</p>}
+      {mensaje && (
+        <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800">
+          {mensaje}
+        </p>
+      )}
+
+      {error && (
+        <p className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-800">
+          {error}
+        </p>
+      )}
 
       {resumen && (
         <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          <TarjetaResumen titulo="Usuarios" descripcion="Cuentas registradas" contenido={<p className="text-4xl font-black text-white">{resumen.usuarios}</p>} />
-          <TarjetaResumen titulo="Eventos" descripcion="Carteleras registradas" contenido={<p className="text-4xl font-black text-white">{resumen.eventos}</p>} />
-          <TarjetaResumen titulo="Apuestas" descripcion="Apuestas totales" contenido={<p className="text-4xl font-black text-white">{resumen.apuestas}</p>} />
-          <TarjetaResumen titulo="Ingresos" descripcion="Pagos confirmados" contenido={<p className="text-4xl font-black text-white">{formatearMoneda(resumen.ingresos)}</p>} />
-          <TarjetaResumen titulo="Predicciones" descripcion="Cálculos generados" contenido={<p className="text-4xl font-black text-white">{resumen.predicciones}</p>} />
-          <TarjetaResumen titulo="Precisión" descripcion={`${resumen.aciertos} aciertos · ${resumen.errores} errores`} contenido={<p className="text-4xl font-black text-white">{resumen.precision}%</p>} />
+          <TarjetaResumen
+            titulo="Usuarios"
+            descripcion="Cuentas registradas"
+            contenido={<p className="text-4xl font-black text-slate-900">{resumen.usuarios}</p>}
+          />
+          <TarjetaResumen
+            titulo="Eventos"
+            descripcion="Carteleras registradas"
+            contenido={<p className="text-4xl font-black text-slate-900">{resumen.eventos}</p>}
+          />
+          <TarjetaResumen
+            titulo="Apuestas"
+            descripcion="Apuestas totales"
+            contenido={<p className="text-4xl font-black text-slate-900">{resumen.apuestas}</p>}
+          />
+          <TarjetaResumen
+            titulo="Ingresos"
+            descripcion="Pagos confirmados"
+            contenido={<p className="text-4xl font-black text-slate-900">{formatearMoneda(resumen.ingresos)}</p>}
+          />
+          <TarjetaResumen
+            titulo="Predicciones"
+            descripcion="Cálculos generados"
+            contenido={<p className="text-4xl font-black text-slate-900">{resumen.predicciones}</p>}
+          />
+          <TarjetaResumen
+            titulo="Precisión"
+            descripcion={`${resumen.aciertos} aciertos · ${resumen.errores} errores`}
+            contenido={<p className="text-4xl font-black text-slate-900">{resumen.precision}%</p>}
+          />
         </section>
       )}
     </div>
