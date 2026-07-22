@@ -1,85 +1,25 @@
-from fastapi import APIRouter, Depends, Request, status
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends
+from app.usuarios.models import Usuario
+from app.auth.dependencias import obtener_usuario_actual
 
-from app.auth.schemas import (
-    LoginEntrada,
-    MensajeAuth,
-    RefreshEntrada,
-    RegistroUsuarioEntrada,
-    RestablecerPasswordEntrada,
-    SolicitudRecuperacionEntrada,
-    TokensRespuesta,
-    VerificarRecuperacionEntrada,
-    VerificarRegistroEntrada,
-)
-from app.auth.service import (
-    validar_codigo_recuperacion,
-    iniciar_sesion_usuario,
-    refrescar_tokens_usuario,
-    registrar_nuevo_usuario,
-    restablecer_password,
-    solicitar_recuperacion_password,
-    verificar_registro_usuario,
-)
-from app.core.base_de_datos import obtener_db
+# 🟢 Se remueve el prefix="/auth" duplicado aquí para evitar la ruta /auth/auth/
+router = APIRouter(tags=["auth"])
 
-router = APIRouter(prefix="/auth", tags=["auth"])
-
-
-@router.post("/register", response_model=MensajeAuth, status_code=status.HTTP_202_ACCEPTED)
-def registrar_usuario(
-    payload: RegistroUsuarioEntrada,
-    request: Request,
-    db: Session = Depends(obtener_db),
-) -> MensajeAuth:
-    return registrar_nuevo_usuario(db=db, payload=payload, request=request)
-
-
-@router.post("/register/verify", response_model=TokensRespuesta)
-def verificar_registro(
-    payload: VerificarRegistroEntrada,
-    request: Request,
-    db: Session = Depends(obtener_db),
-) -> TokensRespuesta:
-    return verificar_registro_usuario(db=db, payload=payload, request=request)
-
-
-@router.post("/login", response_model=TokensRespuesta)
-def iniciar_sesion(
-    payload: LoginEntrada,
-    request: Request,
-    db: Session = Depends(obtener_db),
-) -> TokensRespuesta:
-    return iniciar_sesion_usuario(db=db, payload=payload, request=request)
-
-
-@router.post("/refresh", response_model=TokensRespuesta)
-def refrescar_token(
-    payload: RefreshEntrada,
-    db: Session = Depends(obtener_db),
-) -> TokensRespuesta:
-    return refrescar_tokens_usuario(db=db, refresh_token=payload.refresh_token)
-
-
-@router.post("/password/forgot", response_model=MensajeAuth, status_code=status.HTTP_202_ACCEPTED)
-def solicitar_recuperacion(
-    payload: SolicitudRecuperacionEntrada,
-    db: Session = Depends(obtener_db),
-) -> MensajeAuth:
-    return solicitar_recuperacion_password(db=db, usuario=payload.usuario)
-
-
-@router.post("/password/verify-code", response_model=MensajeAuth)
-def verificar_codigo_recuperacion(
-    payload: VerificarRecuperacionEntrada,
-    db: Session = Depends(obtener_db),
-) -> MensajeAuth:
-    return validar_codigo_recuperacion(db=db, payload=payload)
-
-
-@router.post("/password/reset", response_model=MensajeAuth)
-def resetear_password(
-    payload: RestablecerPasswordEntrada,
-    db: Session = Depends(obtener_db),
-) -> MensajeAuth:
-    return restablecer_password(db=db, payload=payload)
+@router.get("/estado-sesion")
+def verificar_estado_sesion(
+    usuario_actual: Usuario = Depends(obtener_usuario_actual)
+) -> dict:
+    """
+    Endpoint rápido para que el frontend valide si el token enviado en los headers
+    es correcto y retorne la información limpia guardada en PostgreSQL.
+    """
+    return {
+        "autenticado": True,
+        "usuario": {
+            "id": usuario_actual.id,
+            "nombre": usuario_actual.nombre,
+            "correo": usuario_actual.correo,
+            "rol": usuario_actual.rol,
+            "activo": usuario_actual.activo
+        }
+    }

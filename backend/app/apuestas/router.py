@@ -15,7 +15,7 @@ from app.auth.dependencias import obtener_usuario_actual
 from app.core.base_de_datos import obtener_db
 from app.usuarios.models import Usuario
 
-router = APIRouter(prefix="/apuestas", tags=["apuestas"])
+router = APIRouter(tags=["apuestas"])
 
 
 @router.post("", response_model=ApuestaResumen)

@@ -5,9 +5,17 @@ import { obtenerRankings, type RankingHistorico } from '../services/mvp'
 import { obtenerMensajeError } from '../utils/errores'
 
 const DIVISIONES = [
-  'Flyweight', 'Bantamweight', 'Featherweight', 'Lightweight', 'Welterweight',
-  'Middleweight', 'Light Heavyweight', 'Heavyweight', "Women's Strawweight",
-  "Women's Flyweight", "Women's Bantamweight",
+  'Flyweight',
+  'Bantamweight',
+  'Featherweight',
+  'Lightweight',
+  'Welterweight',
+  'Middleweight',
+  'Light Heavyweight',
+  'Heavyweight',
+  "Women's Strawweight",
+  "Women's Flyweight",
+  "Women's Bantamweight",
 ]
 
 export function RankingsPagina() {
@@ -17,74 +25,87 @@ export function RankingsPagina() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    let ignorarRespuesta = false
+
     setCargando(true)
     setError('')
+
     obtenerRankings(division)
-      .then(setRankings)
-      .catch((causa) => {
-        setRankings([])
-        setError(obtenerMensajeError(causa, 'No se pudieron cargar los rankings.'))
+      .then((datos) => {
+        // Solo actualizamos el estado si el componente no ha cambiado de división
+        if (!ignorarRespuesta) {
+          setRankings(datos)
+        }
       })
-      .finally(() => setCargando(false))
+      .catch((causa) => {
+        if (!ignorarRespuesta) {
+          setRankings([])
+          setError(obtenerMensajeError(causa, 'No se pudieron cargar los rankings.'))
+        }
+      })
+      .finally(() => {
+        if (!ignorarRespuesta) {
+          setCargando(false)
+        }
+      })
+
+    // Limpieza: si la división cambia antes de resolver la promesa, ignoramos la anterior
+    return () => {
+      ignorarRespuesta = true
+    }
   }, [division])
 
   return (
     <div className="flex w-full flex-col gap-6">
       <header>
-        <h2 className="m-0 text-3xl font-black !text-slate-900">Rankings históricos</h2>
-        <p className="mt-2 text-sm !text-slate-600">
-          Consulta la clasificación oficial de peleadores por división.
-        </p>
+        <h2 className="m-0 text-3xl font-black text-white">Rankings históricos</h2>
       </header>
 
-      {/* Selector de división */}
-      <div className="max-w-sm">
-        <select
-          className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700 cursor-pointer"
-          value={division}
-          onChange={(event) => setDivision(event.target.value)}
-        >
-          {DIVISIONES.map((opcion) => (
-            <option className="bg-white !text-slate-900 font-medium" key={opcion} value={opcion}>
-              {opcion}
-            </option>
-          ))}
-        </select>
-      </div>
+      <select
+        className="max-w-sm rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white outline-none focus:border-red-400"
+        value={division}
+        onChange={(event) => setDivision(event.target.value)}
+      >
+        {DIVISIONES.map((opcion) => (
+          <option className="bg-slate-950" key={opcion} value={opcion}>
+            {opcion}
+          </option>
+        ))}
+      </select>
 
-      {cargando && <p className="!text-slate-600 font-medium">Cargando ranking...</p>}
+      {cargando && <p className="text-slate-300">Cargando ranking...</p>}
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-          <p className="text-sm font-medium !text-red-700">{error}</p>
-        </div>
+        <p className="rounded-lg border border-red-400/30 bg-red-500/10 p-4 text-red-100">
+          {error}
+        </p>
       )}
 
-      {!cargando && !error && (
+      {!cargando && !error && rankings.length === 0 && (
+        <p className="text-slate-400">No hay datos de ranking disponibles para esta división.</p>
+      )}
+
+      {!cargando && !error && rankings.length > 0 && (
         <TarjetaResumen
           titulo={division}
           descripcion="Ranking más reciente disponible"
           contenido={
-            <div className="overflow-x-auto">
-              <table className="w-full text-left !text-slate-800">
-                <thead className="border-b border-slate-200 text-xs font-bold uppercase tracking-wider !text-slate-500">
-                  <tr>
-                    <th className="pb-3 w-20">Rank</th>
-                    <th className="pb-3">Fighter</th>
+            <table className="w-full text-left text-slate-200">
+              <thead className="border-b border-white/10 text-sm text-slate-400">
+                <tr>
+                  <th className="pb-3">Rank</th>
+                  <th className="pb-3">Fighter</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rankings.map((item) => (
+                  <tr className="border-b border-white/5" key={item.rank}>
+                    <td className="py-3 font-bold">{item.rank}</td>
+                    <td className="py-3">{item.fighter}</td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {rankings.map((item) => (
-                    <tr className="transition hover:bg-slate-50/80" key={item.rank}>
-                      <td className="py-3 font-bold !text-red-700">
-                        {item.rank === 0 || item.rank === 'C' ? '👑 C' : `#${item.rank}`}
-                      </td>
-                      <td className="py-3 font-semibold !text-slate-900">{item.fighter}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
           }
         />
       )}

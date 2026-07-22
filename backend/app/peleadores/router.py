@@ -5,7 +5,7 @@ from app.core.base_de_datos import obtener_db
 from app.peleadores.schemas import PeleadorDetalle, PeleadorResumen
 from app.peleadores.service import listar_peleadores, obtener_peleador
 
-router = APIRouter(prefix="/peleadores", tags=["peleadores"])
+router = APIRouter(tags=["peleadores"])
 
 
 @router.get("", response_model=list[PeleadorResumen])

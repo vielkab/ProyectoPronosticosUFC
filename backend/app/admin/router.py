@@ -45,7 +45,7 @@ from app.eventos.schemas import PeleaCarteleraResumen
 from app.eventos.service import sincronizar_eventos_mma
 from app.usuarios.models import Usuario
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(tags=["admin"])
 
 
 def requerir_admin(usuario_actual: Usuario = Depends(obtener_usuario_actual)) -> Usuario:

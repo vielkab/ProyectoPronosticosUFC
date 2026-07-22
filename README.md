@@ -134,6 +134,11 @@ Tarjetas de ejemplo:
 
 ## Despliegue
 
+URLs de producción actuales:
+
+- Frontend (Vercel): `https://proyecto-pronosticos-ufc.vercel.app`
+- Backend (Render): `https://proyectopronosticosufc.onrender.com`
+
 ### Frontend en Vercel
 
 1. Conectar el repositorio a Vercel.
@@ -141,9 +146,12 @@ Tarjetas de ejemplo:
 3. Configurar build:
    - Build command: `npm run build`
    - Output directory: `dist`
-4. Establecer variable de entorno:
-   - `VITE_API_URL=https://<tu-backend-en-render>.onrender.com`
+4. Establecer variables de entorno:
+   - `VITE_API_URL=https://proyectopronosticosufc.onrender.com`
+   - `VITE_CLERK_PUBLISHABLE_KEY=<tu_clave_publica_de_clerk>`
 5. Desplegar.
+
+> Si `VITE_API_URL` no se define, el build de producción usa por defecto la URL de Render configurada en el código.
 
 ### Backend en Render
 
@@ -169,14 +177,26 @@ Render puede desplegar directamente desde el repositorio.
 
 #### Variables sugeridas en Render
 
-- `DATABASE_URL` — cadena de conexión a Postgres administrado (puede usar Render Postgres o un servicio externo).
+- `APP_ENV=produccion`
+- `APP_DEBUG=false`
+- `DATABASE_URL` — cadena de conexión a Postgres administrado.
 - `JWT_SECRET`, `SECRET_KEY`
-- `FRONTEND_URL=https://<tu-proyecto-vercel>.vercel.app`
+- `FRONTEND_URL=https://proyecto-pronosticos-ufc.vercel.app`
+- `FRONTEND_URLS=https://proyecto-pronosticos-ufc.vercel.app`
+- `CLERK_ISSUER_URL=https://<tu-instancia>.clerk.accounts.dev`
+- `CLERK_WEBHOOK_SECRET=whsec_...`
+- `CLERK_SECRET_KEY=sk_live_...`
 - `API_SPORTS_KEY` (opcional)
 - `MMA_API_URL=https://v1.mma.api-sports.io`
 - `MMA_FIGHTS_ENDPOINT=/fights`
 - `MMA_EVENTS_ENDPOINT=/events`
 - `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PUBLIC_KEY`
+
+#### Webhook de Clerk en producción
+
+Configura en el dashboard de Clerk la URL:
+
+`https://proyectopronosticosufc.onrender.com/auth/webhook`
 
 ## Consideraciones
 

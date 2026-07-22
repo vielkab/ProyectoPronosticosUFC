@@ -1,0 +1,8 @@
+Asunto: Codigo de recuperacion de PronoStats UFC
+Destino: test_user_flow@example.com
+
+Usa este codigo para restablecer tu contrasena en PronoStats UFC.
+
+Codigo: 473943
+Vigencia: 15 minutos.
+

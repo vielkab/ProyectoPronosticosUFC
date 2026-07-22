@@ -13,13 +13,20 @@ class Usuario(Base):
     __table_args__ = (UniqueConstraint("nombre", name="uq_usuarios_nombre"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    
+    # Identificador único de Clerk para interceptar la sesión JIT
+    clerk_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
+    
     nombre: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
     correo: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    
+    # Lo cambiamos a nullable=True para no romper registros antiguos durante la migración
+    password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    
     rol: Mapped[str] = mapped_column(String(30), nullable=False, default="usuario")
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     
-    # Nuevos campos para verificación de edad e identidad
+    # Campos de verificación de edad e identidad que ya tenías
     cedula: Mapped[str | None] = mapped_column(String(30), unique=True, nullable=True)
     fecha_nacimiento: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     acepta_terminos: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -36,6 +43,5 @@ class Usuario(Base):
         nullable=False,
     )
 
-    # Relación con la billetera
+    # Relación con la billetera intacta para la gestión de saldo
     billetera = relationship("Billetera", back_populates="usuario", uselist=False, cascade="all, delete-orphan")
-

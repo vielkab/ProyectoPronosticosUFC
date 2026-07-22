@@ -21,8 +21,8 @@ export function LayoutAdmin() {
   const { sesion, cerrarSesion } = useAutenticacion()
   const navigate = useNavigate()
 
-  function salir() {
-    cerrarSesion()
+  async function salir() {
+    await cerrarSesion()
     navigate('/iniciar-sesion')
   }
 

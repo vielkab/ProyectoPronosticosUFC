@@ -1,16 +1,12 @@
-import { useMutation } from '@tanstack/react-query'
+import { useSignUp } from '@clerk/clerk-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 
-import { useAutenticacion } from '../hooks/useAutenticacion'
-import { verificarRegistro } from '../services/auth'
-import { obtenerMensajeError } from '../utils/errores'
-
 const esquema = z.object({
-  correo: z.email('Ingresa un correo válido'),
+  correo: z.string().email('Ingresa un correo válido'),
   codigo: z.string().length(6, 'El código debe tener 6 dígitos').regex(/^\d{6}$/, 'El código debe contener solo números'),
 })
 
@@ -19,8 +15,10 @@ type FormularioVerificacion = z.infer<typeof esquema>
 export function VerificarRegistroPagina() {
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
-  const { guardarSesion } = useAutenticacion()
+  const { isLoaded, signUp, setActive } = useSignUp()
   const [mensajeExito] = useState(searchParams.get('mensaje') ?? '')
+  const [errorVerificacion, setErrorVerificacion] = useState<string | null>(null)
+  const [cargando, setCargando] = useState(false)
 
   const {
     register,
@@ -34,72 +32,64 @@ export function VerificarRegistroPagina() {
     },
   })
 
-  const mutacionVerificacion = useMutation({
-    mutationFn: verificarRegistro,
-    onSuccess: (respuesta) => {
-      guardarSesion({
-        accessToken: respuesta.access_token,
-        refreshToken: respuesta.refresh_token,
-        usuario: respuesta.usuario,
-      })
-      navigate('/perfil')
-    },
-  })
+  const enviarFormulario = async (valores: FormularioVerificacion) => {
+    if (!isLoaded) return
+    setErrorVerificacion(null)
+    setCargando(true)
 
-  const enviarFormulario = (valores: FormularioVerificacion) => {
-    mutacionVerificacion.mutate(valores)
+    try {
+      // 1. Intentar validar el código OTP en los servidores de Clerk
+      const completeSignUp = await signUp.attemptEmailAddressVerification({
+        code: valores.codigo,
+      })
+
+      if (completeSignUp.status === 'complete') {
+        // 2. Activamos la sesión en el cliente.
+        // Al hacer esto, el useEffect de tu AutenticacionContexto se activará automáticamente,
+        // llamará al backend JIT, creará al usuario en PostgreSQL y guardará la sesión de forma limpia.
+        await setActive({ session: completeSignUp.createdSessionId })
+
+        // 3. Redirigimos directamente a la ruta protegida.
+        // Tu componente <RutaProtegida /> esperará a que el contexto termine de cargar.
+        navigate('/perfil')
+      } else {
+        console.warn('Estado de verificación incompleto:', completeSignUp)
+        setErrorVerificacion('No se pudo completar la verificación de la cuenta.')
+      }
+    } catch (err: any) {
+      console.error("Error capturado en Clerk:", err)
+      setErrorVerificacion(err.errors?.[0]?.message || 'Código incorrecto o expirado.')
+    } finally {
+      setCargando(false)
+    }
   }
 
   return (
-    <section className="mx-auto w-full max-w-xl rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-      <h2 className="m-0 text-3xl font-black !text-slate-900">Verificar correo</h2>
-      <p className="mt-3 !text-slate-600">
-        Ingresa el código de 6 dígitos que enviamos al correo para terminar de crear tu cuenta.
-      </p>
+    <section className="mx-auto w-full max-w-xl rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 shadow-2xl backdrop-blur-md">
+      <h2 className="m-0 text-3xl font-black text-white">Verificar correo</h2>
+      <p className="mt-3 text-slate-300">Ingresa el código de 6 dígitos que enviamos al correo para terminar de crear tu cuenta.</p>
 
-      {mensajeExito ? (
-        <p className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold !text-emerald-800">
-          {mensajeExito}
-        </p>
-      ) : null}
+      {mensajeExito ? <p className="mt-4 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">{mensajeExito}</p> : null}
 
       <form className="mt-8 flex flex-col gap-5" onSubmit={handleSubmit(enviarFormulario)}>
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold !text-slate-700">Correo</span>
-          <input
-            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700 placeholder:text-slate-400"
-            type="email"
-            {...register('correo')}
-          />
-          {errors.correo ? <span className="text-sm font-medium !text-red-700">{errors.correo.message}</span> : null}
+          <span className="text-sm font-medium text-slate-200">Correo</span>
+          <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400 disabled:opacity-60" type="email" {...register('correo')} disabled />
+          {errors.correo ? <span className="text-sm text-red-300">{errors.correo.message}</span> : null}
         </label>
 
         <label className="flex flex-col gap-2">
-          <span className="text-sm font-semibold !text-slate-700">Código</span>
-          <input
-            className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-center text-lg font-bold tracking-widest !text-slate-900 shadow-sm outline-none transition focus:border-red-700 focus:ring-1 focus:ring-red-700 placeholder:text-slate-400"
-            inputMode="numeric"
-            maxLength={6}
-            placeholder="000000"
-            {...register('codigo')}
-          />
-          {errors.codigo ? <span className="text-sm font-medium !text-red-700">{errors.codigo.message}</span> : null}
+          <span className="text-sm font-medium text-slate-200">Código</span>
+          <input className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400" inputMode="numeric" maxLength={6} {...register('codigo')} placeholder="000000" />
+          {errors.codigo ? <span className="text-sm text-red-300">{errors.codigo.message}</span> : null}
         </label>
 
-        {mutacionVerificacion.isError ? (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-            <span className="text-sm font-medium !text-red-700">
-              {obtenerMensajeError(mutacionVerificacion.error, 'No se pudo verificar el código.')}
-            </span>
-          </div>
+        {errorVerificacion ? (
+          <span className="text-sm text-red-300">{errorVerificacion}</span>
         ) : null}
 
-        <button
-          className="rounded-2xl bg-red-700 px-5 py-3 font-bold text-white shadow-sm transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={mutacionVerificacion.isPending}
-          type="submit"
-        >
-          {mutacionVerificacion.isPending ? 'Verificando...' : 'Verificar y entrar'}
+        <button className="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-70" disabled={!isLoaded || cargando} type="submit">
+          {cargando ? 'Verificando...' : 'Verificar y entrar'}
         </button>
       </form>
     </section>

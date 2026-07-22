@@ -46,7 +46,7 @@ export function BilleteraPagina() {
         setPerfil(datosPerfil)
       } catch (err) {
         if (esErrorAutorizacion(err)) {
-          cerrarSesion()
+          await cerrarSesion()
           setError('Tu sesión expiró. Inicia sesión nuevamente.')
         } else {
           setError('No se pudo cargar la información de tu billetera.')

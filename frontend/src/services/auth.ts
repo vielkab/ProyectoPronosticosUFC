@@ -67,6 +67,21 @@ export async function iniciarSesion(payload: LoginPayload): Promise<RespuestaAut
   return data
 }
 
+export type EstadoSesion = {
+  autenticado: boolean
+  usuario: PerfilUsuario
+}
+
+export async function verificarEstadoSesion(token: string): Promise<EstadoSesion> {
+  const { data } = await api.get<EstadoSesion>('/auth/estado-sesion', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  return data
+}
+
 export async function solicitarRecuperacionPassword(
   payload: SolicitarRecuperacionPayload,
 ): Promise<MensajeAuth> {

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, delete, func
 import stripe
@@ -17,7 +17,7 @@ from app.billetera.schemas import (
     RecargaResumenSchema,
 )
 
-router = APIRouter(prefix="/billetera", tags=["billetera"])
+router = APIRouter(tags=["billetera"])
 
 
 @router.get("", response_model=BilleteraResumen)
@@ -57,6 +57,7 @@ def obtener_billetera(
 @router.post("/recargar", response_model=CheckoutRespuestaRecarga)
 def recargar_creditos(
     payload: RecargaEntrada,
+    request: Request,
     usuario_actual: Usuario = Depends(obtener_usuario_actual),
     db: Session = Depends(obtener_db),
 ) -> CheckoutRespuestaRecarga:
@@ -95,6 +96,12 @@ def recargar_creditos(
         )
 
     stripe.api_key = ajustes.stripe_secret_key
+    origen_frontend = request.headers.get("origin") or ajustes.frontend_url_base
+    if not origen_frontend.strip() and ajustes.es_desarrollo:
+        origen_frontend = "http://localhost:5173"
+    if origen_frontend.endswith("/"):
+        origen_frontend = origen_frontend[:-1]
+
     try:
         # Configuramos success_url para incluir el session_id dinámico de Stripe Checkout
         session = stripe.checkout.Session.create(
@@ -113,8 +120,8 @@ def recargar_creditos(
                     "quantity": 1,
                 }
             ],
-            success_url=f"{ajustes.frontend_url_base}/billetera?stripe=success&session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{ajustes.frontend_url_base}/billetera?stripe=cancel",
+            success_url=f"{origen_frontend}/billetera?stripe=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{origen_frontend}/billetera?stripe=cancel",
             metadata={
                 "tipo": "recarga",
                 "usuario_id": str(usuario_actual.id),

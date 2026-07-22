@@ -8,7 +8,7 @@ from app.predicciones.service import obtener_prediccion
 router = APIRouter(tags=["predicciones"])
 
 
-@router.get("/predicciones/{pelea_id}", response_model=PrediccionCombate)
+@router.get("/{pelea_id}", response_model=PrediccionCombate)
 def obtener_prediccion_endpoint(
     pelea_id: int,
     db: Session = Depends(obtener_db),
