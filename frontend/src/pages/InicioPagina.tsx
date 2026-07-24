@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 
 import { SeccionHero } from '../components/ui/SeccionHero'
 import { TarjetaResumen } from '../components/ui/TarjetaResumen'
+import { useAutenticacion } from '../hooks/useAutenticacion'
 
 const modulos = [
   {
@@ -25,12 +26,25 @@ const modulos = [
 ]
 
 export function InicioPagina() {
+  const { autenticado, sesion } = useAutenticacion()
+
+  const nombreUsuario = sesion?.usuario?.nombre || 'Usuario'
+
   return (
     <div className="flex w-full flex-col gap-8">
+      {/* Solo cambia el texto dinámicamente según si está autenticado o no */}
       <SeccionHero
-        etiqueta="Resumen público"
-        titulo="Explora UFC sin registrarte y entra cuando quieras apostar"
-        descripcion="Puedes recorrer carteleras, peleadores y saber dónde existe pronóstico disponible. Para apostar, gestionar tu saldo o ver funciones privadas, necesitarás una cuenta."
+        etiqueta={autenticado ? 'Panel de usuario' : 'Resumen público'}
+        titulo={
+          autenticado
+            ? `¡Bienvenido de nuevo, ${nombreUsuario}!`
+            : 'Explora UFC sin registrarte y entra cuando quieras apostar'
+        }
+        descripcion={
+          autenticado
+            ? 'Revisa tus pronósticos activos, consulta las carteleras del momento y gestiona la información de tu cuenta.'
+            : 'Puedes recorrer carteleras, peleadores y saber dónde existe pronóstico disponible. Para apostar, gestionar tu saldo o ver funciones privadas, necesitarás una cuenta.'
+        }
       />
 
       <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">

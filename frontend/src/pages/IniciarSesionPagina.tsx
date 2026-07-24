@@ -1,11 +1,11 @@
-// IniciarSesionPagina.tsx
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth, useSignIn } from '@clerk/clerk-react'
 import { z } from 'zod'
 
+import { TarjetaResumen } from '../components/ui/TarjetaResumen'
 import { CampoPassword } from '../components/forms/CampoPassword'
 import { useAutenticacion } from '../hooks/useAutenticacion'
 import { verificarEstadoSesion } from '../services/auth'
@@ -128,49 +128,91 @@ export function IniciarSesionPagina() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-xl rounded-[2rem] border border-white/10 bg-slate-950/70 p-8 shadow-2xl backdrop-blur-md">
-      <h2 className="m-0 text-3xl font-black text-white">Iniciar sesión</h2>
-      <p className="mt-3 text-slate-300">Accede con tu correo y la contraseña de tu cuenta verificada.</p>
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-6 pt-4">
+      {/* Botón de regresar perfectamente alineado a la izquierda del contenedor del formulario */}
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-red-700 hover:text-red-700"
+      >
+        ← Regresar
+      </button>
 
-      <form className="mt-8 flex flex-col gap-5" onSubmit={handleSubmit(enviarFormulario)}>
-        <label className="flex flex-col gap-2">
-          <span className="text-sm font-medium text-slate-200">Correo</span>
-          <input
-            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-white outline-none transition focus:border-red-400"
-            type="email"
-            {...register('correo')}
-            placeholder="correo@ejemplo.com"
-          />
-          {errors.correo ? <span className="text-sm text-red-300">{errors.correo.message}</span> : null}
-        </label>
+      <TarjetaResumen
+        titulo="Iniciar sesión"
+        descripcion="Accede a tu cuenta para consultar tus apuestas, revisar tu historial y utilizar todas las funciones privadas de la plataforma."
+        contenido={
+          <form className="mt-2 flex flex-col gap-6" onSubmit={handleSubmit(enviarFormulario)}>
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-semibold text-slate-700">
+                Correo electrónico
+              </span>
 
-        <CampoPassword etiqueta="Contraseña" error={errors.password?.message} registro={register('password')} />
+              <input
+                className="rounded-2xl border border-slate-300 bg-white px-4 py-3 text-slate-700 outline-none transition focus:border-red-600"
+                type="email"
+                placeholder="correo@ejemplo.com"
+                {...register('correo')}
+              />
 
-        <div className="flex items-center justify-between gap-4 text-sm">
-          <span className="text-slate-400">Tu correo debe estar verificado para poder entrar.</span>
+              {errors.correo && (
+                <span className="text-sm text-red-600">
+                  {errors.correo.message}
+                </span>
+              )}
+            </label>
 
-          <Link
-            to={
-              correoActual.trim()
-                ? `/recuperar-password/codigo?correo=${encodeURIComponent(correoActual.trim())}&auto=1`
-                : '/recuperar-password/codigo'
-            }
-            className="font-medium text-red-300 transition hover:text-red-200 hover:underline"
-          >
-            ¿Olvidaste tu contraseña?
-          </Link>
-        </div>
+            <CampoPassword
+              etiqueta="Contraseña"
+              error={errors.password?.message}
+              registro={register('password')}
+            />
 
-        {errorClerk ? <span className="text-sm text-red-300">{errorClerk}</span> : null}
+            <div className="flex flex-col gap-3 text-sm md:flex-row md:items-center md:justify-between">
+              <span className="text-slate-500">
+                Tu correo debe estar verificado para iniciar sesión.
+              </span>
 
-        <button
-          className="rounded-2xl bg-red-500 px-5 py-3 font-semibold text-white transition hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-70"
-          disabled={cargando || !isLoaded || !authLoaded}
-          type="submit"
-        >
-          {cargando ? 'Ingresando...' : 'Entrar'}
-        </button>
-      </form>
-    </section>
+              <Link
+                to={
+                  correoActual.trim()
+                    ? `/recuperar-password/codigo?correo=${encodeURIComponent(
+                        correoActual.trim(),
+                      )}&auto=1`
+                    : '/recuperar-password/codigo'
+                }
+                className="font-medium text-red-700 transition hover:text-red-800 hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+
+            {errorClerk && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {errorClerk}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={cargando || !isLoaded || !authLoaded}
+              className="rounded-full bg-red-700 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {cargando ? 'Ingresando...' : 'Iniciar sesión'}
+            </button>
+
+            <div className="border-t border-slate-200 pt-5 text-center text-sm text-slate-500">
+              ¿Todavía no tienes una cuenta?{' '}
+              <Link
+                to="/registro"
+                className="font-semibold text-red-700 transition hover:text-red-800 hover:underline"
+              >
+                Crear una cuenta
+              </Link>
+            </div>
+          </form>
+        }
+      />
+    </div>
   )
 }
