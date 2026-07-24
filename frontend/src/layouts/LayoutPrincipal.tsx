@@ -7,6 +7,7 @@ const enlacesPublicos = [
   { to: '/eventos', etiqueta: 'Carteleras' },
   { to: '/peleadores', etiqueta: 'Peleadores' },
   { to: '/predicciones', etiqueta: 'Pronósticos' },
+  { to: '/apuestas-combinadas', etiqueta: 'Apuestas Combinadas' },
   { to: '/rankings', etiqueta: 'Rankings' },
   { to: '/historico', etiqueta: 'Histórico' },
 ]

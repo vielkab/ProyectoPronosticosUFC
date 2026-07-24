@@ -21,6 +21,7 @@ import { NoEncontradoPagina } from './pages/NoEncontradoPagina'
 import { PeleadoresPagina } from './pages/PeleadoresPagina'
 import { PerfilPagina } from './pages/PerfilPagina'
 import { PrediccionesPagina } from './pages/PrediccionesPagina'
+import { ApuestasCombinadasPagina } from './pages/ApuestasCombinadasPagina'
 import { RankingsPagina } from './pages/RankingsPagina'
 import { RegistroPagina } from './pages/RegistroPagina'
 import { RutaAdmin } from './routes/RutaAdmin'
@@ -42,7 +43,9 @@ const proveedorRutas = createBrowserRouter([
       { path: 'eventos', element: <EventosPagina /> },
       { path: 'peleadores', element: <PeleadoresPagina /> },
       { path: 'predicciones', element: <PrediccionesPagina /> },
+      { path: 'apuestas-combinadas', element: <ApuestasCombinadasPagina /> },
       { path: 'rankings', element: <RankingsPagina /> },
+
       { path: 'historico', element: <HistoricoPagina /> },
       {
         element: <RutaProtegida />,

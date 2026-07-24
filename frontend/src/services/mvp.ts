@@ -253,3 +253,33 @@ export async function retirarApuesta(token: string, apuestaId: number): Promise<
   })
   return data
 }
+
+export type SeleccionApuestaCombinada = {
+  pelea_id: number
+  peleador_seleccionado_id: number
+  ver_pronostico?: boolean
+}
+
+export async function registrarApuestaCombinada(
+  token: string,
+  payload: {
+    monto_total: number
+    selecciones: SeleccionApuestaCombinada[]
+  },
+): Promise<ApuestaResumen[]> {
+  const montoPorPelea = Number((payload.monto_total / payload.selecciones.length).toFixed(2))
+  const apuestasRegistradas: ApuestaResumen[] = []
+
+  for (const sel of payload.selecciones) {
+    const res = await registrarApuesta(token, {
+      pelea_id: sel.pelea_id,
+      peleador_seleccionado_id: sel.peleador_seleccionado_id,
+      monto: montoPorPelea,
+      ver_pronostico: sel.ver_pronostico,
+    })
+    apuestasRegistradas.push(res)
+  }
+
+  return apuestasRegistradas
+}
+
