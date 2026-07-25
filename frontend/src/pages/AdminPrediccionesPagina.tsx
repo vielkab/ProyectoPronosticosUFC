@@ -61,7 +61,7 @@ export function AdminPrediccionesPagina() {
                 <tr className="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider !text-slate-500">
                   <th className="px-4 py-3.5">#</th>
                   <th className="px-4 py-3.5">Evento</th>
-                  <th className="px-4 py-3.5">Combate</th>
+                  <th className="px-4 py-3.5">Pelea</th>
                   <th className="px-4 py-3.5 text-right">Prob. Rojo</th>
                   <th className="px-4 py-3.5 text-right">Cuota Rojo</th>
                   <th className="px-4 py-3.5 text-right">Prob. Azul</th>
